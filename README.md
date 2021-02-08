@@ -41,7 +41,7 @@ Random stuff found while messing around with the Klonoa 2 prototype build.
 | 1F (31)       |                                       |
 | 20 (32)       |                                       |
 | 21 (33)       |                                       |
-| 22 (34)       |                                       |
+| 22 (34)       | Dead                                  |
 | 23 (35)       |                                       |
 | 24 (36)       |                                       |
 | 25 (37)       |                                       |
