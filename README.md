@@ -4,6 +4,10 @@ Random stuff found while messing around with the Klonoa 2 prototype build.
 More info: [Klonoa 2: Lunatea's Veil (Jun 4, 2001 Prototype) - Hidden Palace](https://hiddenpalace.org/Klonoa_2:_Lunatea%27s_Veil_(Jun_4,_2001_prototype))
 * According to the string at `003610B0` and `003610C0`, this build date might be `Dec 13 2000 16:27:35`.
 
+Sections
+* [Debug Stuff](https://github.com/evilarceus/klonoa2-stuff#debug-stuff)
+* [Klonoa/Camera](https://github.com/evilarceus/klonoa2-stuff#klonoa-camera)
+
 ## Debug Stuff
 ### Debug Menu
 This build includes a debug menu, which can be accessed by writing `0x1` to the address `00303F38`. Credit to [punk7890](https://twitter.com/punk_7890/status/1206743316995297280) for finding the menu and creating the code: "Most [options] don't work since it requires files from the developer's computer. Level select and sound tests do work."
@@ -91,11 +95,29 @@ hPushRestart ... done
 nakano > Obj Klonoa Init
 ```
 
-## State
+## Klonoa/Camera
 | Region    | Address  |
 |-----------|----------|
-| Prototype | 002FC1C0 |
+| Prototype | 002FC060 |
 
+| Address    | Description                     |
+|------------|---------------------------------|
+| ADDR+0x00  | Camera Position X               |
+| ADDR+0x04  | Camera Position Y               |
+| ADDR+0x08  | Camera Position Z               |
+| ADDR+0x14  | Camera Rotation (-3.14 to 3.14) |
+| ADDR+0x60  | Klonoa [State](https://github.com/evilarceus/klonoa2-stuff#state) (byte)             |
+| ADDR+0x70  | Klonoa Position X               |
+| ADDR+0x74  | Klonoa Position Y               |
+| ADDR+0x78  | Klonoa Position Z               |
+| ADDR+0x80  | Klonoa Speed X                  |
+| ADDR+0x84  | Klonoa Speed Y                  |
+| ADDR+0x88  | Klonoa Speed Z                  |
+| ADDR+0x1B0 | Klonoa Rotation X (Unused)      |
+| ADDR+0x1B4 | Klonoa Rotation Y (Unused)      |
+| ADDR+0x1B8 | Klonoa Rotation Z (Unused)      |
+
+### State
 | Hex (Decimal) | State                                 |
 |---------------|---------------------------------------|
 | 00 (0)        | None                                  |
