@@ -6,7 +6,7 @@ More info: [Klonoa 2: Lunatea's Veil (Jun 4, 2001 Prototype) - Hidden Palace](ht
 
 Sections
 * [Debug Stuff](https://github.com/evilarceus/klonoa2-stuff#debug-stuff)
-* [Klonoa/Camera](https://github.com/evilarceus/klonoa2-stuff#klonoa-camera)
+* [Klonoa/Camera](https://github.com/evilarceus/klonoa2-stuff#klonoacamera)
 
 ## Debug Stuff
 ### Debug Menu
