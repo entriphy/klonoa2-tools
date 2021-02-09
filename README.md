@@ -9,6 +9,16 @@ Sections
 * [Klonoa/Camera](https://github.com/evilarceus/klonoa2-stuff#klonoacamera)
 
 ## Debug Stuff
+### .pnach file
+Name this file `3F81E474.pnach` and put it in the `cheats` directory of PCSX2 to use all the codes below.
+```
+gametitle=Klonoa 2 Prototype
+patch=1,EE,D034FC82,extended,0000FFFD
+patch=1,EE,20303F38,extended,00000001
+patch=1,EE,202D0C60,extended,080B7158
+patch=1,EE,20179FF0,extended,00000000
+```
+
 ### Debug Menu
 This build includes a debug menu, which can be accessed by writing `0x1` to the address `00303F38`. Credit to [punk7890](https://twitter.com/punk_7890/status/1206743316995297280) for finding the menu and creating the code: "Most [options] don't work since it requires files from the developer's computer. Level select and sound tests do work."
 
@@ -93,6 +103,12 @@ EVOL=-0.0e+1
 BGM =0
 hPushRestart ... done
 nakano > Obj Klonoa Init
+```
+
+### Disable Idle Timer
+This code will prevent the game from going back to the main menu when you do not input a control after 30 seconds. Note that the idle timer on the menu will stay active.
+```
+20179FF0 00000000
 ```
 
 ## Klonoa/Camera
