@@ -41,6 +41,7 @@ During the cutscene at the beginning of Jungle Slider, Klonoa's animation gets a
 
 ### this
 yeah<br>
+**NOTE**: This is actually a glitch with PCSX2 for both copies of the game and is fixed if you enable "Automatic Gamefixes". Just leaving it here for... reasons. :)<br>
 ![this2](https://user-images.githubusercontent.com/1747088/109418600-1c259f80-797e-11eb-8f93-c1802af134d9.png)
 
 
