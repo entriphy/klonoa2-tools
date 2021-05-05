@@ -1,68 +1,47 @@
-import os, sys, struct
+import os
+from lib import kldata_archive
+from lib.structs.headpack_struct import Headpack
+from lib.filetypes.ppt import PPT
 
-pack_header = bytes([0x08, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00])
+# Config
+headpack_bin_path: str = "game_files/HEADPACK.BIN"
+kldata_bin_path: str = "game_files/KLDATA.BIN"
+bgmpack_bin_path: str = "game_files/BGMPACK.BIN"
+pptpack_bin_path: str = "game_files/PPTPACK.BIN"
+limit: int = 0 # Limits how many archives are extracted from KLDATA (200 total). Set to 0 to remove this limit.
+convert = True # Set this to true to automatically convert files when extracting KLDATA. (klfx -> obj, klfy -> png, gim -> png, etc)
 
-def get_u32_le(buf, offset):
-    return struct.unpack("<I", buf[offset:offset+4])[0]
 
-def get_file_arg(message):
-    x = ''
-    while not os.path.isfile(x):
-        x = input(message).strip('"')
-    return os.path.realpath(x)
+# Main
+if __name__ == "__main__":
+    headpack_buf = bytearray(open(headpack_bin_path, "rb").read())
+    headpack = Headpack.from_bytes(headpack_buf)
 
-def get_dir_arg(message):
-    x = ''
-    while not os.path.isdir(x):
-        x = input(message).strip('"')
-    return os.path.realpath(x)
-
-bin_path = "KLDATA.BIN"
-if not os.access(bin_path, os.R_OK):
-    print("KLDATA.BIN could not be found in the local directory.")
-    sys.exit(1)
-
-out_dir = input("Enter name of folder to extract to: ")
-if not os.access(out_dir, os.R_OK):
-    print("Creating directory...")
-    os.mkdir(out_dir)
-
-with open(bin_path, "rb") as bin:
-    buf = bytearray(bin.read())
-
-idx = 0 # Used for naming folders (KLDATA_%d)
-pack_offset = buf.find(pack_header)
-while pack_offset != -1:
-    if pack_offset % 2048 != 0: # Invalid pack header, skip
-        pack_offset = buf.find(pack_header, pack_offset + 1)
-        continue
+    # Extract KLDATA.BIN
+    kldata_buf = bytearray(open(kldata_bin_path, "rb").read())
+    kldata_dir = os.path.splitext(kldata_bin_path)[0]
+    if not os.access(kldata_dir, os.R_OK):
+        print("Creating %s directory..." % kldata_dir)
+        os.mkdir(kldata_dir)
+    for i, archive in enumerate(headpack.kldata.archives):
+        print("Extracting archive %i..." % i)
+        archive_bytes = kldata_buf[archive.offset:archive.offset + archive.size]
+        archive_dir = "%s/%i_%s" % (kldata_dir, i, hex(archive.offset))
+        if not os.access(archive_dir, os.R_OK): os.mkdir(archive_dir)
+        kldata_archive.unpack(archive_bytes, archive_dir, archive.offset, convert)
+        if i != 0 and i == limit: break
     
-    pack_size = get_u32_le(buf, pack_offset + 0x20) - 0x20
-    if pack_size == 0x80: # Empty pack
-        idx += 1
-        pack_offset = buf.find(pack_header, pack_offset + 1)
-        continue
+    # Extract PPTPACK.BIN
+    # .vag files are playable in foobar2000/WinAmp using the vgmstream plugin
+    # https://github.com/vgmstream/vgmstream
+    pptpack_buf = bytearray(open(pptpack_bin_path, "rb").read())
+    pptpack_dir = os.path.splitext(pptpack_bin_path)[0]
+    if not os.access(pptpack_dir, os.R_OK):
+        print("Creating %s directory..." % pptpack_dir)
+        os.mkdir(pptpack_dir)
+    for i, archive in enumerate(headpack.pptpack.archives):
+        ppt_bytes = pptpack_buf[archive.offset:archive.offset + archive.size]
+        filename = "%s/%s.vag" % (pptpack_dir, str(i))
+        PPT.to_vag(ppt_bytes, filename)
 
-    dir_name = "%s/KLDATA_%s" % (out_dir, str(idx))
-    if not os.access(dir_name, os.R_OK):
-        os.mkdir(dir_name)
-    pack_buf = buf[pack_offset:pack_offset + pack_size]
-    pack_files_offset = 0x30
-    while get_u32_le(pack_buf, pack_files_offset) == 0xFFFFFFFF: # Often times, the number at 0x30 is 0xFFFFFFFF. This might be indicating something, but let's just ignore it for now.
-        pack_files_offset += 0x10
-    pack_file_count = get_u32_le(pack_buf, pack_files_offset)
-    for file_idx in range(1, pack_file_count + 1):
-        file_start_offset = pack_files_offset + get_u32_le(pack_buf, pack_files_offset + 0x04 * file_idx)
-        if file_idx == pack_file_count:
-            file_end_offset = pack_size
-        else:
-            file_end_offset = pack_files_offset + get_u32_le(pack_buf, pack_files_offset + 0x04 * (file_idx + 1))
-        file_buf = pack_buf[file_start_offset:file_end_offset]
-
-        filename = "%s/%s.kldata" % (dir_name, str(file_idx))
-        f = open(filename, "wb")
-        f.write(file_buf)
-        f.close()
-
-    idx += 1
-    pack_offset = buf.find(pack_header, pack_offset + 1)
+    # TODO: Figure out how to extract BGMPACK
