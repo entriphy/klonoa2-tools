@@ -100,9 +100,21 @@ types:
         type: s2
       - id: z
         type: s2
+    instances:
+      x_fixed:
+        value: x / 2048
+      y_fixed:
+        value: y / -2048
+      z_fixed:
+        value: z / -2048
   uv:
     seq:
       - id: u
         type: u4
       - id: v
         type: u4
+    instances:
+      fixed_u:
+        value: u / 16384
+      fixed_v:
+        value: 1.0 - v / 16384
