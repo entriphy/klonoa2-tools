@@ -22,9 +22,10 @@ class KLFY(ft.Type):
             height = u16le(buf, 0x34)
             start_x = u16le(buf, 0x24)
             start_y = u16le(buf, 0x26)
-            eight_bit_color = False
+            texture_length = u16le(buf, 0x50) * 0x10
 
-            palette_offset = 0x60 + (width * height) // 2 + 0x60
+            palette_offset = 0x60 + texture_length + 0x60
+            eight_bit_color = buf[palette_offset - 0x10] == 0x40
             palette = []
             for i in range(16 if not eight_bit_color else 256):
                 color_offset = palette_offset + (i * 4)
