@@ -38,14 +38,29 @@ class Headpack(KaitaiStruct):
             if hasattr(self, '_m_archives'):
                 return self._m_archives if hasattr(self, '_m_archives') else None
 
-            _pos = self._io.pos()
-            self._io.seek((self.start_offset + 4))
-            self._m_archives = [None] * (self.archive_count)
-            for i in range(self.archive_count):
-                self._m_archives[i] = Headpack.Archive(self._io, self, self._root)
+            if self.archive_count != 5:
+                _pos = self._io.pos()
+                self._io.seek((self.start_offset + 4))
+                self._m_archives = [None] * (self.archive_count)
+                for i in range(self.archive_count):
+                    self._m_archives[i] = Headpack.Archive(self._io, self, self._root)
 
-            self._io.seek(_pos)
+                self._io.seek(_pos)
+
             return self._m_archives if hasattr(self, '_m_archives') else None
+
+        @property
+        def pal_archives(self):
+            if hasattr(self, '_m_pal_archives'):
+                return self._m_pal_archives if hasattr(self, '_m_pal_archives') else None
+
+            if self.archive_count == 5:
+                _pos = self._io.pos()
+                self._io.seek(self.start_offset)
+                self._m_pal_archives = Headpack.PalArchive(self._io, self, self._root)
+                self._io.seek(_pos)
+
+            return self._m_pal_archives if hasattr(self, '_m_pal_archives') else None
 
 
     class Archive(KaitaiStruct):
@@ -74,6 +89,56 @@ class Headpack(KaitaiStruct):
 
             self._m_size = (self.sectors * 2048)
             return self._m_size if hasattr(self, '_m_size') else None
+
+
+    class PalArchiveList(KaitaiStruct):
+        def __init__(self, start_offset, i, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self.start_offset = start_offset
+            self.i = i
+            self._read()
+
+        def _read(self):
+            pass
+
+        @property
+        def kldata(self):
+            if hasattr(self, '_m_kldata'):
+                return self._m_kldata if hasattr(self, '_m_kldata') else None
+
+            _pos = self._io.pos()
+            self._io.seek((self.start_offset + self._parent.archive_offsets[self.i]))
+            self._m_kldata = Headpack.Pointers((self.start_offset + self._parent.archive_offsets[self.i]), self._io, self, self._root)
+            self._io.seek(_pos)
+            return self._m_kldata if hasattr(self, '_m_kldata') else None
+
+
+    class PalArchive(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.pal_kldata_count = self._io.read_u4le()
+            self.archive_offsets = [None] * (self.pal_kldata_count)
+            for i in range(self.pal_kldata_count):
+                self.archive_offsets[i] = self._io.read_u4le()
+
+
+        @property
+        def kldata_list(self):
+            if hasattr(self, '_m_kldata_list'):
+                return self._m_kldata_list if hasattr(self, '_m_kldata_list') else None
+
+            self._m_kldata_list = [None] * (self.pal_kldata_count)
+            for i in range(self.pal_kldata_count):
+                self._m_kldata_list[i] = Headpack.PalArchiveList(self._parent.start_offset, i, self._io, self, self._root)
+
+            return self._m_kldata_list if hasattr(self, '_m_kldata_list') else None
 
 
     @property
