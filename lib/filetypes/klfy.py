@@ -33,7 +33,8 @@ class KLFY(ft.Type):
                 g = buf[color_offset + 1]
                 b = buf[color_offset + 2]
                 a = buf[color_offset + 3]
-                palette.append((r, g, b, 255))
+                a = 255 if a != 0 else 0
+                palette.append((r, g, b, a))
 
             if not eight_bit_color:
                 for i in range((width * height) // 2):

@@ -25,7 +25,8 @@ class GIM(ft.Type):
             r = buf[color_offset]
             g = buf[color_offset + 1]
             b = buf[color_offset + 2]
-            a = buf[color_offset + 3]
+            a = buf[color_offset + 3] * 2
+            a = 255 if a != 0 else 0
             palette.append((r, g, b, a))
 
         img = Image.new("RGBA", (width, height))
