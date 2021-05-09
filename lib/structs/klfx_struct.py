@@ -136,12 +136,28 @@ class Klfx(KaitaiStruct):
             self.some_other_numbers = self._io.read_bytes(16)
 
         @property
+        def prev_normals(self):
+            if hasattr(self, '_m_prev_normals'):
+                return self._m_prev_normals if hasattr(self, '_m_prev_normals') else None
+
+            self._m_prev_normals = (self._parent.normals_offset if self.i == 0 else self._parent.subparts[(self.i - 1)].res_normals)
+            return self._m_prev_normals if hasattr(self, '_m_prev_normals') else None
+
+        @property
+        def res_normals(self):
+            if hasattr(self, '_m_res_normals'):
+                return self._m_res_normals if hasattr(self, '_m_res_normals') else None
+
+            self._m_res_normals = ((self.prev_normals + (self._parent.subparts[self.i].normal_count * 6)) + ((16 - ((self._parent.subparts[self.i].normal_count * 6) % 16)) if ((self._parent.subparts[self.i].normal_count * 6) % 16) != 0 else 0))
+            return self._m_res_normals if hasattr(self, '_m_res_normals') else None
+
+        @property
         def vertices(self):
             if hasattr(self, '_m_vertices'):
                 return self._m_vertices if hasattr(self, '_m_vertices') else None
 
             _pos = self._io.pos()
-            self._io.seek(((((self._parent.vertices_offset + (self._parent.subparts[(self.i - 1)].vertex_count * 6)) + 16) - ((self._parent.subparts[(self.i - 1)].vertex_count * 6) % 16)) if self.i > 0 else self._parent.vertices_offset))
+            self._io.seek(self.prev_vertices)
             self._m_vertices = [None] * (self.vertex_count)
             for i in range(self.vertex_count):
                 self._m_vertices[i] = Klfx.Coordinate(self._io, self, self._root)
@@ -150,14 +166,30 @@ class Klfx(KaitaiStruct):
             return self._m_vertices if hasattr(self, '_m_vertices') else None
 
         @property
+        def res_vertices(self):
+            if hasattr(self, '_m_res_vertices'):
+                return self._m_res_vertices if hasattr(self, '_m_res_vertices') else None
+
+            self._m_res_vertices = ((self.prev_vertices + (self._parent.subparts[self.i].vertex_count * 6)) + ((16 - ((self._parent.subparts[self.i].vertex_count * 6) % 16)) if ((self._parent.subparts[self.i].vertex_count * 6) % 16) != 0 else 0))
+            return self._m_res_vertices if hasattr(self, '_m_res_vertices') else None
+
+        @property
+        def prev_vertices(self):
+            if hasattr(self, '_m_prev_vertices'):
+                return self._m_prev_vertices if hasattr(self, '_m_prev_vertices') else None
+
+            self._m_prev_vertices = (self._parent.vertices_offset if self.i == 0 else self._parent.subparts[(self.i - 1)].res_vertices)
+            return self._m_prev_vertices if hasattr(self, '_m_prev_vertices') else None
+
+        @property
         def normals(self):
             if hasattr(self, '_m_normals'):
                 return self._m_normals if hasattr(self, '_m_normals') else None
 
             _pos = self._io.pos()
-            self._io.seek(((((self._parent.normals_offset + (self._parent.subparts[(self.i - 1)].normal_count * 6)) + 16) - ((self._parent.subparts[(self.i - 1)].normal_count * 6) % 16)) if self.i > 0 else self._parent.normals_offset))
-            self._m_normals = [None] * (self.vertex_count)
-            for i in range(self.vertex_count):
+            self._io.seek(self.prev_normals)
+            self._m_normals = [None] * (self.normal_count)
+            for i in range(self.normal_count):
                 self._m_normals[i] = Klfx.Coordinate(self._io, self, self._root)
 
             self._io.seek(_pos)
