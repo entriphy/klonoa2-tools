@@ -12,7 +12,7 @@ This repository uses [Kaitai Struct](https://kaitai.io) to parse binary formats.
     - [x] Textures
         * Klonoa's model requires a manual texture fix when extracted, but other than that, it works 95% of the time
     - [x] UVs
-        * UVs have noticeable bleeding in some models, but it isn't too noticable in other models
+        * UVs are nearly perfect when using glTF files in Blender because it supports nearest mipmapping. Using .obj files or linear mipmapping causes noticable bleeding in some models.
     - [ ] Rig/Bones
     - [ ] Animations
 - [ ] Visions (Stages)
