@@ -83,15 +83,23 @@ types:
         size: 16
     instances:
       vertices:
-        pos: "i > 0 ? _parent.vertices_offset + _parent.subparts[i - 1].vertex_count * 6 + 16 - (_parent.subparts[i - 1].vertex_count * 6) % 16 : _parent.vertices_offset"
+        pos: prev_vertices
         type: coordinate
         repeat: expr
         repeat-expr: vertex_count
       normals:
-        pos: "i > 0 ? _parent.normals_offset + _parent.subparts[i - 1].normal_count * 6 + 16 - (_parent.subparts[i - 1].normal_count * 6) % 16 : _parent.normals_offset"
+        pos: prev_normals
         type: coordinate
         repeat: expr
-        repeat-expr: vertex_count
+        repeat-expr: normal_count
+      prev_vertices:
+        value: "i == 0 ? _parent.vertices_offset : (_parent.subparts[i - 1].res_vertices).as<u4>"
+      res_vertices:
+        value: "prev_vertices + _parent.subparts[i].vertex_count * 6 + ((_parent.subparts[i].vertex_count * 6) % 16 != 0 ? 16 - (_parent.subparts[i].vertex_count * 6) % 16 : 0)"
+      prev_normals:
+        value: "i == 0 ? _parent.normals_offset : (_parent.subparts[i - 1].res_normals).as<u4>"
+      res_normals:
+        value: "prev_normals + _parent.subparts[i].normal_count * 6 + ((_parent.subparts[i].normal_count * 6) % 16 != 0 ? 16 - (_parent.subparts[i].normal_count * 6) % 16 : 0)"
   coordinate:
     seq:
       - id: x
