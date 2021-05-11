@@ -1,3 +1,7 @@
+from typing import List
+
+from kaitaistruct import KaitaiStream
+from lib.structs.klfz_struct import Klfz
 import os, math, base64
 import filetype as ft
 import numpy as np
@@ -75,14 +79,20 @@ class KLFX(ft.Type):
             normalized.append([x, y, z])
         return np.array(normalized, dtype=np.float32)
     
-    def to_gltf(buf, path, texture_path):
+    def to_gltf(path, textures, morphs: List[str] = []):
+        buf = open(path, "rb").read()
         klfx = Klfx.from_bytes(buf)
         gltf_filename = path.replace(".klfx", ".gltf")
         vertices_bytes = bytes()
         normals_bytes = bytes()
         uvs_bytes = bytes()
         triangles_bytes = bytes()
-        texture_bytes = open(texture_path, "rb").read()
+        textures_bytes = [open(texture, "rb").read() for texture in textures]
+        if len(morphs) > 0:
+            new_morphs = []
+            for morph in morphs:
+                new_morphs.append(Klfz(klfx, KaitaiStream(open(morph, "rb"))))
+            morphs = new_morphs
 
         meshes = []
         accessors = []
@@ -104,33 +114,55 @@ class KLFX(ft.Type):
             normals_fixed = []
             uvs_fixed = []
             indices_fixed = []
+            vertices_map = []
             for face in indices:
                 if face[0] not in indices_list:
                     indices_list.append(face[0])
                     vertices_fixed.append(vertices[face[0][0]])
                     normals_fixed.append(normals[face[0][2]])
                     uvs_fixed.append(uvs[face[0][1]])
+                    vertices_map.append(face[0][0])
                 if face[1] not in indices_list:
                     indices_list.append(face[1])
                     vertices_fixed.append(vertices[face[1][0]])
                     normals_fixed.append(normals[face[1][2]])
                     uvs_fixed.append(uvs[face[1][1]])
+                    vertices_map.append(face[1][0])
                 if face[2] not in indices_list:
                     indices_list.append(face[2])
                     vertices_fixed.append(vertices[face[2][0]])
                     normals_fixed.append(normals[face[2][2]])
                     uvs_fixed.append(uvs[face[2][1]])
+                    vertices_map.append(face[2][0])
                 indices_fixed.append([indices_list.index(face[0]), indices_list.index(face[1]), indices_list.index(face[2])])
 
             vertices = vertices_fixed
             normals = normals_fixed
             uvs = uvs_fixed
             faces = indices_fixed
+
             
             vertices_array = np.array(vertices, dtype=np.float32)
             normals_array = np.array(normals, dtype=np.float32)
             uvs_array = np.array(uvs, dtype=np.float32)
             triangles_array = np.array(faces, dtype=np.uint16)
+
+            mesh = pygltflib.Mesh(
+                name="part" + str(i),
+                primitives=[
+                    pygltflib.Primitive(
+                        attributes=pygltflib.Attributes(
+                            POSITION=len(accessors),
+                            NORMAL=len(accessors) + 1,
+                            TEXCOORD_0=len(accessors) + 2
+                        ),
+                        targets=[],
+                        indices=len(accessors) + 3,
+                        material=0,
+                        mode=pygltflib.TRIANGLES
+                    )
+                ]
+            )
 
             accessors.append(pygltflib.Accessor(
                 name="part%i_vertices" % (i),
@@ -173,34 +205,77 @@ class KLFX(ft.Type):
                 min=[int(triangles_array.min())],
             ))
 
-            meshes.append(pygltflib.Mesh(
-                name="part" + str(i),
-                primitives=[
-                    pygltflib.Primitive(
-                        attributes=pygltflib.Attributes(
-                            POSITION=(i * 4),
-                            NORMAL=(i * 4) + 1,
-                            TEXCOORD_0=(i * 4) + 2
-                        ),
-                        indices=(i * 4) + 3,
-                        material=0,
-                        mode=pygltflib.TRIANGLES
-                    )
-                ]
-            ))
 
             vertices_bytes += vertices_array.tobytes()
             normals_bytes += normals_array.tobytes()
             uvs_bytes += uvs_array.tobytes()
             triangles_bytes += triangles_array.flatten().tobytes()
+
+            if len(morphs) > 0:
+                for x, morph in enumerate(morphs):
+                    if morph.parts[0].part_number != i: continue
+                    morph_vertices = []
+                    morph_normals = []
+                    for subpart in morph.parts[0].subparts:
+                        morph_vertices += [[vertex.x / 2048, vertex.y / -2048, vertex.z / -2048] for vertex in subpart.vertices]
+                        morph_normals += [[normal.x / 2048, normal.y / -2048, normal.z / -2048] for normal in subpart.normals]
+
+                    morph_vertices_fixed = []
+                    morph_normals_fixed = []
+                    for idx in vertices_map:
+                        morph_vertices_fixed.append([morph_vertices[idx][0] - vertices[vertices_map.index(idx)][0], morph_vertices[idx][1] - vertices[vertices_map.index(idx)][1], morph_vertices[idx][2] - vertices[vertices_map.index(idx)][2]])
+                        morph_normals_fixed.append([morph_normals[idx][0] - normals[vertices_map.index(idx)][0], morph_normals[idx][1] - normals[vertices_map.index(idx)][1], morph_normals[idx][2] - normals[vertices_map.index(idx)][2]])
+
+                    morph_vertices = morph_vertices_fixed
+                    morph_normals = morph_normals_fixed
+
+                    morph_vertices_array = np.array(morph_vertices, dtype=np.float32)
+                    morph_normals_array = np.array(morph_normals, dtype=np.float32)
+                    
+                    mesh.primitives[0].targets.append(
+                        pygltflib.Attributes(
+                            POSITION=len(accessors),
+                            NORMAL=len(accessors) + 1,
+                        )
+                    )
+
+                    accessors.append(pygltflib.Accessor(
+                        name="part%i_morph%i_vertices" % (i, x),
+                        bufferView=0,
+                        byteOffset=len(vertices_bytes),
+                        componentType=pygltflib.FLOAT,
+                        count=len(morph_vertices),
+                        type=pygltflib.VEC3,
+                        max=morph_vertices_array.max(axis=0).tolist(),
+                        min=morph_vertices_array.min(axis=0).tolist()
+                    ))
+                    accessors.append(pygltflib.Accessor(
+                        name="part%i_morph%i_normals" % (i, x),
+                        bufferView=1,
+                        byteOffset=len(normals_bytes),
+                        componentType=pygltflib.FLOAT,
+                        count=len(morph_normals),
+                        type=pygltflib.VEC3,
+                        max=morph_normals_array.max(axis=0).tolist(),
+                        min=morph_normals_array.min(axis=0).tolist(),
+                    ))
+
+                    vertices_bytes += morph_vertices_array.tobytes()
+                    normals_bytes += morph_normals_array.tobytes()
+
+            meshes.append(mesh)
     
-        buffer_bytes = vertices_bytes + normals_bytes + uvs_bytes + triangles_bytes + texture_bytes
+        buffer_bytes = vertices_bytes + normals_bytes + uvs_bytes + triangles_bytes
         gltf = pygltflib.GLTF2(
             scene=0,
-            scenes=[pygltflib.Scene(nodes=[i for i in range(len(klfx.parts))])],
+            scenes=[pygltflib.Scene(nodes=[0])],
             meshes=meshes,
             accessors=accessors,
             nodes=[
+                pygltflib.Node(
+                    name=os.path.basename(path),
+                    children=[i for i in range(1, len(klfx.parts) + 1)]
+                ),
                 *[pygltflib.Node(name="part" + str(i), mesh=i) for i in range(len(klfx.parts)) if klfx.parts[i].subpart_count != 0]
             ],
             buffers=[
@@ -240,27 +315,21 @@ class KLFX(ft.Type):
                     byteLength=len(triangles_bytes),
                     byteOffset=len(vertices_bytes) + len(normals_bytes) + len(uvs_bytes),
                     target=pygltflib.ELEMENT_ARRAY_BUFFER
-                ),
-                pygltflib.BufferView(
-                    name="texture",
-                    buffer=0,
-                    byteLength=len(texture_bytes),
-                    byteOffset=len(vertices_bytes) + len(normals_bytes) + len(uvs_bytes) + len(triangles_bytes),
-                ),
+                )
             ],
             images=[
                 pygltflib.Image(
-                    name=os.path.basename(texture_path),
+                    name=os.path.basename(texture),
                     mimeType="image/png",
-                    bufferView=4
-                )
+                    bufferView=4 + x
+                ) for x, texture in enumerate(textures)
             ],
             materials=[
                 pygltflib.Material(
-                    name="mtl0",
+                    name="mtl" + str(x),
                     pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(
                         baseColorTexture=pygltflib.TextureInfo(
-                            index=0
+                            index=x
                         ),
                         baseColorFactor=[1, 1, 1, 1],
                         metallicFactor=0,
@@ -269,7 +338,7 @@ class KLFX(ft.Type):
                     emissiveFactor=[0, 0, 0],
                     alphaMode=pygltflib.OPAQUE,
                     doubleSided=True
-                )
+                ) for x in range(len(textures))
             ],
             samplers=[
                 pygltflib.Sampler(
@@ -281,13 +350,25 @@ class KLFX(ft.Type):
             ],
             textures=[
                 pygltflib.Texture(
-                    name=os.path.basename(texture_path),
+                    name=os.path.basename(texture),
                     sampler=0,
-                    source=0
-                )
+                    source=x
+                ) for x, texture in enumerate(textures)
             ]
         )
 
+        for x, texture in enumerate(textures_bytes):
+            gltf.bufferViews.append(
+                pygltflib.BufferView(
+                    name="texture_%i" % x,
+                    buffer=0,
+                    byteLength=len(texture),
+                    byteOffset=len(buffer_bytes)
+                )
+            )
+            buffer_bytes += texture
+
+        gltf.buffers = [pygltflib.Buffer(byteLength=len(buffer_bytes), uri="data:application/gltf-buffer;base64," + base64.b64encode(buffer_bytes).decode("utf-8"))]
         gltf.save(gltf_filename)
         
 

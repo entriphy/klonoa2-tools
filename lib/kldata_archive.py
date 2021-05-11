@@ -1,3 +1,6 @@
+from kaitaistruct import KaitaiStream
+from lib.structs.klfx_struct import Klfx
+from lib.structs.klfz_struct import Klfz
 import os, glob, shutil
 from .util.read_bytes import u32le
 from . import filetypes
@@ -64,3 +67,13 @@ def unpack(buf, dir, offset, convert=True):
             if len(files) > 0:
                 png_path = files[0]
                 shutil.copyfile(png_path, dir + "/model.png")
+    if is_model and convert:
+        png_files = list(filter(lambda x: not x.endswith("model.png"), glob.glob(dir + "/../**/*.png", recursive=True)))
+        klfx_files = glob.glob(dir + "/*.klfx", recursive=True)
+        klfz_files = glob.glob(dir + "/**/*.klfz", recursive=True)
+        klfzs = []
+        if len(png_files) == 0: return
+        if len(klfx_files) == 0: return
+        if len(klfz_files) > 0:
+            for klfz in klfz_files: klfzs.append(klfz)
+        filetypes.klfx.KLFX.to_gltf(klfx_files[0], png_files, morphs=klfzs)
