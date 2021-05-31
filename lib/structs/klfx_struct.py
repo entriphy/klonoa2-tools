@@ -22,6 +22,20 @@ class Klfx(KaitaiStruct):
             self.parts[i] = Klfx.Part(self._io, self, self._root)
 
 
+    class Weight(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.a = self._io.read_u1()
+            self.b = self._io.read_u1()
+            self.c = self._io.read_u1()
+            self.d = self._io.read_u1()
+
+
     class Uv(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -62,7 +76,7 @@ class Klfx(KaitaiStruct):
             self.magic2 = self._io.read_bytes(4)
             if not self.magic2 == b"\x80\x00\x40\x00":
                 raise kaitaistruct.ValidationNotEqualError(b"\x80\x00\x40\x00", self.magic2, self._io, u"/types/header/seq/2")
-            self.unknown_bytes = self._io.read_bytes(4)
+            self.scale = self._io.read_f4le()
             self.reserved = self._io.read_bytes(4)
 
 
@@ -129,11 +143,27 @@ class Klfx(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.ids = self._io.read_bytes(8)
+            self.joints = Klfx.Joints(self._io, self, self._root)
             self.vertex_count = self._io.read_u2le()
             self.normal_count = self._io.read_u2le()
             self.some_numbers = self._io.read_bytes(4)
-            self.some_other_numbers = self._io.read_bytes(16)
+            self.reserved = self._io.read_bytes(4)
+            self.weights_offset = self._io.read_u4le()
+            self.some_other_numbers = self._io.read_bytes(8)
+
+        @property
+        def weights(self):
+            if hasattr(self, '_m_weights'):
+                return self._m_weights if hasattr(self, '_m_weights') else None
+
+            _pos = self._io.pos()
+            self._io.seek(self.weights_offset)
+            self._m_weights = [None] * (self.vertex_count)
+            for i in range(self.vertex_count):
+                self._m_weights[i] = Klfx.Weight(self._io, self, self._root)
+
+            self._io.seek(_pos)
+            return self._m_weights if hasattr(self, '_m_weights') else None
 
         @property
         def prev_normals(self):
@@ -194,6 +224,20 @@ class Klfx(KaitaiStruct):
 
             self._io.seek(_pos)
             return self._m_normals if hasattr(self, '_m_normals') else None
+
+
+    class Joints(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.a = self._io.read_u2le()
+            self.b = self._io.read_u2le()
+            self.c = self._io.read_u2le()
+            self.d = self._io.read_u2le()
 
 
 

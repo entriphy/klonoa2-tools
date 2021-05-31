@@ -17,8 +17,8 @@ types:
         type: u2
       - id: magic2
         contents: [0x80, 0x00, 0x40, 0x00]
-      - id: unknown_bytes
-        size: 4
+      - id: scale
+        type: f4
       - id: reserved
         size: 4
   part:
@@ -71,16 +71,20 @@ types:
       - id: i
         type: u4
     seq:
-      - id: ids
-        size: 8
+      - id: joints
+        type: joints
       - id: vertex_count
         type: u2
       - id: normal_count
         type: u2
       - id: some_numbers
         size: 4
+      - id: reserved
+        size: 4
+      - id: weights_offset
+        type: u4
       - id: some_other_numbers
-        size: 16
+        size: 8
     instances:
       vertices:
         pos: prev_vertices
@@ -92,6 +96,11 @@ types:
         type: coordinate
         repeat: expr
         repeat-expr: normal_count
+      weights:
+        pos: weights_offset
+        type: weight
+        repeat: expr
+        repeat-expr: vertex_count
       prev_vertices:
         value: "i == 0 ? _parent.vertices_offset : (_parent.subparts[i - 1].res_vertices).as<u4>"
       res_vertices:
@@ -114,3 +123,23 @@ types:
         type: u4
       - id: v
         type: u4
+  joints:
+    seq:
+      - id: a
+        type: u2
+      - id: b
+        type: u2
+      - id: c
+        type: u2
+      - id: d
+        type: u2
+  weight:
+    seq:
+      - id: a
+        type: u1
+      - id: b
+        type: u1
+      - id: c
+        type: u1
+      - id: d
+        type: u1
