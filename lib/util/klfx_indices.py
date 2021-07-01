@@ -3,8 +3,12 @@ from .read_bytes import u16le
 import numpy as np
 
 def __check_winding_correct(part: Klfx.Part, vertex_indices, normal_indices): # TODO: Klonoa's eyelids' faces are messed up because of this function
-    vertices = [(vertex.x, vertex.y, vertex.z) for subpart in part.subparts for vertex in subpart.vertices]
-    normals = [(normal.x, normal.y, normal.z) for subpart in part.subparts for normal in subpart.normals]
+    if part.subpart_count > 0:
+        vertices = [(vertex.x, -vertex.y, -vertex.z) for subpart in part.subparts for vertex in subpart.vertices]
+        normals = [(normal.x, -normal.y, -normal.z) for subpart in part.subparts for normal in subpart.normals]
+    else:
+        vertices = [(vertex.x, -vertex.y, -vertex.z) for vertex in part.vertices]
+        normals = [(normal.x, -normal.y, -normal.z) for normal in part.normals]
     A = vertices[vertex_indices[0]]
     B = vertices[vertex_indices[1]]
     C = vertices[vertex_indices[2]]
@@ -15,9 +19,10 @@ def __check_winding_correct(part: Klfx.Part, vertex_indices, normal_indices): # 
     BA = np.subtract(B, A)
     CA = np.subtract(C, A)
     cross = np.cross(BA, CA)
-    return (np.dot(normal, cross) >= 0)
+    dot = np.dot(normal, cross)
+    return (dot >= 0)
 
-def parse_faces(buf, part: Klfx.Part): # TODO: Recreate this function in Kaitai (if it's even possible)
+def parse_faces(buf, part: Klfx.Part):
         faces = []
         indices, tstrips = [], []
         current_part = 0

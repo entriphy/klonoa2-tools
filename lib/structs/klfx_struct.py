@@ -133,6 +133,34 @@ class Klfx(KaitaiStruct):
             self._io.seek(_pos)
             return self._m_uvs if hasattr(self, '_m_uvs') else None
 
+        @property
+        def vertices(self):
+            if hasattr(self, '_m_vertices'):
+                return self._m_vertices if hasattr(self, '_m_vertices') else None
+
+            _pos = self._io.pos()
+            self._io.seek(self.vertices_offset)
+            self._m_vertices = [None] * ((self.vertex_count if self.subpart_count == 0 else 0))
+            for i in range((self.vertex_count if self.subpart_count == 0 else 0)):
+                self._m_vertices[i] = Klfx.Coordinate(self._io, self, self._root)
+
+            self._io.seek(_pos)
+            return self._m_vertices if hasattr(self, '_m_vertices') else None
+
+        @property
+        def normals(self):
+            if hasattr(self, '_m_normals'):
+                return self._m_normals if hasattr(self, '_m_normals') else None
+
+            _pos = self._io.pos()
+            self._io.seek(self.normals_offset)
+            self._m_normals = [None] * ((self.normal_count if self.subpart_count == 0 else 0))
+            for i in range((self.normal_count if self.subpart_count == 0 else 0)):
+                self._m_normals[i] = Klfx.Coordinate(self._io, self, self._root)
+
+            self._io.seek(_pos)
+            return self._m_normals if hasattr(self, '_m_normals') else None
+
 
     class Subpart(KaitaiStruct):
         def __init__(self, i, _io, _parent=None, _root=None):

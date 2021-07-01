@@ -9,7 +9,11 @@ def __is_archive(archive_bytes):
     if len(archive_bytes) == 0: return False
     # Check that the integer at the beginning seems "reasonable" for an archive
     archive_check = u32le(archive_bytes, 0)
-    if archive_check == 1 and (u32le(archive_bytes, 0x08) == len(archive_bytes) or (u32le(archive_bytes, 0x04) == 0x10 and u32le(archive_bytes, 0x08) == 0x10)): return True
+    if archive_check == 1 \
+        and (u32le(archive_bytes, 0x08) == len(archive_bytes) \
+        or (u32le(archive_bytes, 0x04) == 0x10 \
+        and u32le(archive_bytes, 0x08) == 0x10)):
+            return True
     elif archive_check < 2 or archive_check > 1000: return False
     # Check that file offsets are valid
     file_offsets = [0]
@@ -31,7 +35,7 @@ def unpack(buf, dir, offset, convert=True):
     for i, file_offset in enumerate(file_offsets):
         file_start_offset = file_offset
         file_end_offset = file_offsets[i + 1] if i != len(file_offsets) - 1 else len(buf)
-        file_kldata_offset = offset + file_start_offset
+        file_kldata_offset = offset + file_start_offset # Get offset for file in KLDATA.BIN. Only used for naming the extracted file/archive.
         file_bytes = buf[file_start_offset:file_end_offset]
         is_archive = __is_archive(file_bytes)
         if is_archive:
@@ -49,9 +53,9 @@ def unpack(buf, dir, offset, convert=True):
                 try:
                     if extension == "gim": filetypes.gim.GIM.to_png(file_bytes, filename)
                     elif extension == "klfx": 
-                        filetypes.klfx.KLFX.to_obj(file_bytes, filename)
+                        filetypes.klfx.KLFX.to_obj(filename)
                         is_model = True
-                    elif extension == "klfy": filetypes.klfy.KLFY.to_png(file_bytes, filename)
+                    elif extension == "klfy": filetypes.klfy.KLFY.to_png(filename)
                 except Exception as e:
                     print("Error %s:" % filename, e)
     
@@ -67,13 +71,17 @@ def unpack(buf, dir, offset, convert=True):
             if len(files) > 0:
                 png_path = files[0]
                 shutil.copyfile(png_path, dir + "/model.png")
-    if is_model and convert:
-        png_files = list(filter(lambda x: not x.endswith("model.png"), glob.glob(dir + "/../**/*.png", recursive=True)))
-        klfx_files = glob.glob(dir + "/*.klfx", recursive=True)
-        klfz_files = glob.glob(dir + "/**/*.klfz", recursive=True)
-        klfzs = []
-        if len(png_files) == 0: return
-        if len(klfx_files) == 0: return
-        if len(klfz_files) > 0:
-            for klfz in klfz_files: klfzs.append(klfz)
-        filetypes.klfx.KLFX.to_gltf(klfx_files[0], png_files, morphs=klfzs)
+    # if is_model and convert:
+    #     try:
+    #         png_files = list(filter(lambda x: not x.endswith("model.png"), glob.glob(dir + "/../**/*.png", recursive=True)))
+    #         klfx_files = glob.glob(dir + "/*.klfx", recursive=True)
+    #         klfz_files = glob.glob(dir + "/**/*.klfz", recursive=True)
+    #         klfb_files = glob.glob(dir + "/**/*.kldata", recursive=True)
+    #         klfzs = []
+    #         if len(png_files) == 0: return
+    #         if len(klfx_files) == 0: return
+    #         if len(klfb_files) == 0: return
+    #         if len(klfz_files) > 0:
+    #             for klfz in klfz_files: klfzs.append(klfz)
+    #         filetypes.klfx.KLFX.to_gltf(klfx_files[0], png_files, joints_path=klfb_files[0], morphs=klfzs, animations=klfb_files[1:])
+    #     except: pass
