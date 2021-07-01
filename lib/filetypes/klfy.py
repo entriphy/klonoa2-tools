@@ -13,7 +13,8 @@ class KLFY(ft.Type):
     def match(self, buf):
         return len(buf) > 0x60 and buf[0x28] == 0x50 and buf[0x38] == 0x51 and buf[0x48] == 0x52 and buf[0x58] == 0x53
 
-    def to_png(buf, path):
+    def to_png(path):
+        buf = open(path, "rb").read()
         buf = buf[0x10:]
         img = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
         pixels = img.load()
@@ -24,17 +25,23 @@ class KLFY(ft.Type):
             start_y = u16le(buf, 0x26)
             texture_length = u16le(buf, 0x50) * 0x10
 
-            palette_offset = 0x60 + texture_length + 0x60
-            eight_bit_color = buf[palette_offset - 0x10] == 0x40
+            palette_offset = 0x60 + texture_length + 0x10
+            palette_width = u16le(buf, palette_offset + 0x20)
+            palette_height = u16le(buf, palette_offset + 0x24)
+            palette_colors = palette_width * palette_height
+            eight_bit_color = palette_colors == 256
+
+            colors_offset = palette_offset + 0x50
             palette = []
-            for i in range(16 if not eight_bit_color else 256):
-                color_offset = palette_offset + (i * 4)
+            for i in range(palette_colors):
+                color_offset = colors_offset + (i * 4)
                 r = buf[color_offset]
                 g = buf[color_offset + 1]
                 b = buf[color_offset + 2]
                 a = buf[color_offset + 3]
                 a = 255 if a != 0 else 0
                 palette.append((r, g, b, a))
+                # palette.append((r, g, b))
 
             if not eight_bit_color:
                 for i in range((width * height) // 2):
@@ -51,6 +58,6 @@ class KLFY(ft.Type):
                     y = start_y + i // width
                     pixel = buf[0x60 + i]
                     pixels[x, y] = palette[pixel]
-            buf = buf[palette_offset + 0x40:]
+            buf = buf[colors_offset + palette_colors * 4:]
 
         img.save(path.replace(".klfy", ".png"))
