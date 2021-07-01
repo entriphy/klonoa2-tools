@@ -9,4 +9,4 @@ class BD(ft.Type):
         super().__init__(self.MIME, self.EXTENSION)
 
     def match(self, buf):
-        return buf[:len(self.MAGIC)] == self.MAGIC and len(buf) > 16
+        return buf[:len(self.MAGIC)] == self.MAGIC and len(buf) > 0x100
