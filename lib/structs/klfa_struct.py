@@ -17,15 +17,12 @@ class Klfa(KaitaiStruct):
 
     def _read(self):
         self.joint_count = self._io.read_u2le()
-        self.frames = self._io.read_u2le()
-        self.joint_counts = [None] * (2)
-        for i in range(2):
-            self.joint_counts[i] = self._io.read_u2le()
-
-        self.name = (KaitaiStream.bytes_terminate(self._io.read_bytes(8), 0, False)).decode(u"ascii")
+        self.keyframe_count = self._io.read_u2le()
+        self.more_joint_counts = self._io.read_bytes(4)
+        self.name = (KaitaiStream.bytes_terminate(self._io.read_bytes(8), 0, False)).decode(u"ASCII")
         self.stuff = self._io.read_bytes(8)
-        self.frames_offset = self._io.read_u2le()
-        self.more_stuff = self._io.read_bytes((((6 + self.frames_offset) - 32) + 8))
+        self.data_offset = self._io.read_u4le()
+        self.more_stuff = self._io.read_bytes((((6 + self.data_offset) - 32) + 6))
         self.initial_pos = Klfa.FloatCoordinate(self._io, self, self._root)
         self.scale = self._io.read_f4le()
         self.joint_translations = [None] * (self.joint_count)
@@ -45,14 +42,13 @@ class Klfa(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.frame_count = self._io.read_u2le()
-            self.zero = self._io.read_u2le()
-            self.frame_indices = [None] * (self.frame_count)
-            for i in range(self.frame_count):
-                self.frame_indices[i] = self._io.read_u2le()
+            self.keyframe_count = self._io.read_u4le()
+            self.keyframes = [None] * (self.keyframe_count)
+            for i in range(self.keyframe_count):
+                self.keyframes[i] = self._io.read_u2le()
 
-            self.coordinates = [None] * (self.frame_count)
-            for i in range(self.frame_count):
+            self.coordinates = [None] * (self.keyframe_count)
+            for i in range(self.keyframe_count):
                 self.coordinates[i] = Klfa.Coordinate(self._io, self, self._root)
 
 
@@ -65,14 +61,13 @@ class Klfa(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.frame_count = self._io.read_u2le()
-            self.zero = self._io.read_u2le()
-            self.frame_indices = [None] * (self.frame_count)
-            for i in range(self.frame_count):
-                self.frame_indices[i] = self._io.read_u2le()
+            self.keyframe_count = self._io.read_u4le()
+            self.keyframes = [None] * (self.keyframe_count)
+            for i in range(self.keyframe_count):
+                self.keyframes[i] = self._io.read_u2le()
 
-            self.rotations = [None] * (self.frame_count)
-            for i in range(self.frame_count):
+            self.rotations = [None] * (self.keyframe_count)
+            for i in range(self.keyframe_count):
                 self.rotations[i] = Klfa.Rotation(self._io, self, self._root)
 
 

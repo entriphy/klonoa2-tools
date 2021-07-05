@@ -485,7 +485,7 @@ class KLFX(ft.Type):
                 channels = []
 
                 # Initial position
-                root_keyframes_array = np.array([(float(klfa.frames) - 1.0) / 20.0], dtype=np.float32)
+                root_keyframes_array = np.array([(float(klfa.keyframe_count) - 1.0) / 60.0], dtype=np.float32)
                 root_translations_array = np.array([[klfa.initial_pos.x, -klfa.initial_pos.y, -klfa.initial_pos.z]])
                 root_keyframes_array_bytes = root_keyframes_array.tobytes()
                 root_translations_array_bytes = root_translations_array.tobytes()
@@ -535,9 +535,9 @@ class KLFX(ft.Type):
 
                 for i, joint_translation in enumerate(klfa.joint_translations):
                     translations_array = np.array([[translation.x * scale, -translation.y * scale, -translation.z * scale] for translation in joint_translation.coordinates], dtype=np.float32)
-                    translations_keyframes_array = np.array([(float(keyframe) - 1.0) / 20.0 for keyframe in joint_translation.frame_indices], dtype=np.float32)
+                    translations_keyframes_array = np.array([(float(keyframe) - 1.0) / 50.0 for keyframe in joint_translation.keyframes], dtype=np.float32)
                     rotations_array = np.array([euler_to_quat(rotation) for rotation in klfa.joint_rotations[i].rotations], dtype=np.float32)
-                    rotations_keyframes_array = np.array([(float(keyframe) - 1.0) / 20.0 for keyframe in klfa.joint_rotations[i].frame_indices], dtype=np.float32)
+                    rotations_keyframes_array = np.array([(float(keyframe) - 1.0) / 50.0 for keyframe in klfa.joint_rotations[i].keyframes], dtype=np.float32)
 
                     translations_array_bytes = translations_array.tobytes()
                     translations_keyframes_array_bytes = translations_keyframes_array.tobytes()
@@ -694,5 +694,4 @@ class KLFX(ft.Type):
 
 
         gltf.buffers = [pygltflib.Buffer(byteLength=len(buffer_bytes), uri="data:application/gltf-buffer;base64," + base64.b64encode(buffer_bytes).decode("utf-8"))]
-        # gltf.set_binary_blob(buffer_bytes)
         gltf.save(gltf_filename)
