@@ -471,7 +471,7 @@ class KLFX(ft.Type):
             # z = -rotation.z / 0xFFFF * 360
             # if z < -180.0: z = 360 + z
 
-            return Rotation.from_euler("xyz", [rotation.x / 0xFFFF * 360, -rotation.y / 0xFFFF * 360, -rotation.z / 0xFFFF * 360], degrees=True).as_quat()
+            return Rotation.from_euler("XYZ", [rotation.x / 0xFFFF * 360, -rotation.y / 0xFFFF * 360, -rotation.z / 0xFFFF * 360], degrees=True).as_quat()
 
         anim_list = []
         for animation in animations:
