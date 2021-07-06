@@ -99,7 +99,6 @@ class KLFX(ft.Type):
         uvs_bytes = bytes()
         triangles_bytes = bytes()
         if len(morphs) > 0: morphs = [Klfz(klfx, KaitaiStream(open(morph, "rb"))) for morph in morphs]
-        scale = klfx.header.scale
 
         meshes = []
         accessors = []

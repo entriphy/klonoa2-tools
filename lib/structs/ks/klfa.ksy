@@ -13,8 +13,10 @@ seq:
     terminator: 0
     size: 8
     encoding: ASCII
-  - id: stuff
-    size: 8
+  - id: st
+    size: 4
+  - id: morphs_offset
+    type: u4
   - id: data_offset
     type: u4
   - id: more_stuff
@@ -31,7 +33,34 @@ seq:
     type: joint_rotation
     repeat: expr
     repeat-expr: joint_count
+instances:
+  morphs:
+    if: morphs_offset != 0
+    pos: morphs_offset
+    type: morph_data
 types:
+  morph_data:
+    seq:
+      - id: morph_count
+        type: u1
+      - id: morph_keyframes
+        type: morph_keyframe
+        repeat: expr
+        repeat-expr: _parent.keyframe_count
+  morph_keyframe:
+    seq:
+      - id: keyframe_data
+        type: morph_keyframe_data
+        repeat: expr
+        repeat-expr: _parent.morph_count
+  morph_keyframe_data:
+    seq:
+      - id: morph0
+        type: u1
+      - id: morph1
+        type: u1
+      - id: weight
+        type: u1
   float_coordinate:
     seq:
       - id: x
