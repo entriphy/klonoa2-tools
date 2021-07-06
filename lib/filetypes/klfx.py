@@ -247,8 +247,8 @@ class KLFX(ft.Type):
                     morph_vertices = []
                     morph_normals = []
                     for subpart in morph.parts[0].subparts:
-                        morph_vertices += [[vertex.x * scale, -vertex.y * scale, -vertex.z * scale] for vertex in subpart.vertices]
-                        morph_normals += [[normal.x * scale, -normal.y * scale, -normal.z * scale] for normal in subpart.normals]
+                        morph_vertices += [[vertex.x * morph.scale, -vertex.y * morph.scale, -vertex.z * morph.scale] for vertex in subpart.vertices]
+                        morph_normals += [[normal.x / 0xFFFF, -normal.y / 0xFFFF, -normal.z / 0xFFFF] for normal in subpart.normals]
 
                     morph_vertices_fixed = []
                     morph_normals_fixed = []

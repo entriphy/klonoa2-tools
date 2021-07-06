@@ -38,7 +38,7 @@ class Klfz(KaitaiStruct):
             self.magic2 = self._io.read_bytes(4)
             if not self.magic2 == b"\x80\x00\x40\x00":
                 raise kaitaistruct.ValidationNotEqualError(b"\x80\x00\x40\x00", self.magic2, self._io, u"/types/header/seq/2")
-            self.unknown_bytes = self._io.read_bytes(4)
+            self.scale = self._io.read_f4le()
             self.reserved = self._io.read_bytes(4)
             if not self.reserved == b"\x00\x00\x00\x00":
                 raise kaitaistruct.ValidationNotEqualError(b"\x00\x00\x00\x00", self.reserved, self._io, u"/types/header/seq/4")

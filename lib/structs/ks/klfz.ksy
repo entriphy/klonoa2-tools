@@ -22,8 +22,8 @@ types:
         type: u2
       - id: magic2
         contents: [0x80, 0x00, 0x40, 0x00]
-      - id: unknown_bytes
-        size: 4
+      - id: scale
+        type: f4
       - id: reserved
         contents: [0x00, 0x00, 0x00, 0x00]
   part:
