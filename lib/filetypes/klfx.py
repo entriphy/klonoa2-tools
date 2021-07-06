@@ -534,9 +534,9 @@ class KLFX(ft.Type):
 
                 for i, joint_translation in enumerate(klfa.joint_translations):
                     translations_array = np.array([[translation.x * scale, -translation.y * scale, -translation.z * scale] for translation in joint_translation.coordinates], dtype=np.float32)
-                    translations_keyframes_array = np.array([(float(keyframe) - 1.0) / 50.0 for keyframe in joint_translation.keyframes], dtype=np.float32)
+                    translations_keyframes_array = np.array([(float(keyframe) - 1.0) / 60.0 for keyframe in joint_translation.keyframes], dtype=np.float32)
                     rotations_array = np.array([euler_to_quat(rotation) for rotation in klfa.joint_rotations[i].rotations], dtype=np.float32)
-                    rotations_keyframes_array = np.array([(float(keyframe) - 1.0) / 50.0 for keyframe in klfa.joint_rotations[i].keyframes], dtype=np.float32)
+                    rotations_keyframes_array = np.array([(float(keyframe) - 1.0) / 60.0 for keyframe in klfa.joint_rotations[i].keyframes], dtype=np.float32)
 
                     translations_array_bytes = translations_array.tobytes()
                     translations_keyframes_array_bytes = translations_keyframes_array.tobytes()
