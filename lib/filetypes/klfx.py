@@ -108,7 +108,7 @@ class KLFX(ft.Type):
             # if part.subpart_count == 0: continue # TODO: Find out what it means when this equals zero instead of skipping it
             vertices, normals, weights, joints = [], [], [], []
             for subpart in part.subparts:
-                vertices += [[vertex.x * scale, -vertex.y * scale, -vertex.z * scale] for vertex in subpart.vertices]
+                vertices += [[vertex.x * klfx.header.scale, -vertex.y * klfx.header.scale, -vertex.z * klfx.header.scale] for vertex in subpart.vertices]
                 normals += [[normal.x / 0xFFFF, -normal.y / 0xFFFF, -normal.z / 0xFFFF] for normal in subpart.normals]
                 weights += [[weight.a / 0xFF, weight.b / 0XFF, weight.c / 0XFF, weight.d / 0XFF] for weight in subpart.weights]
                 joints += [[subpart.joints.a + 1, subpart.joints.b + 1 if subpart.joints.b != 0xFFFF else 0, subpart.joints.c + 1 if subpart.joints.c != 0xFFFF else 0, subpart.joints.d + 1 if subpart.joints.d != 0xFFFF else 0] for i in range(len(subpart.vertices))]
@@ -246,7 +246,7 @@ class KLFX(ft.Type):
                     morph_vertices = []
                     morph_normals = []
                     for subpart in morph.parts[0].subparts:
-                        morph_vertices += [[vertex.x * morph.scale, -vertex.y * morph.scale, -vertex.z * morph.scale] for vertex in subpart.vertices]
+                        morph_vertices += [[vertex.x * morph.header.scale, -vertex.y * morph.header.scale, -vertex.z * morph.header.scale] for vertex in subpart.vertices]
                         morph_normals += [[normal.x / 0xFFFF, -normal.y / 0xFFFF, -normal.z / 0xFFFF] for normal in subpart.normals]
 
                     morph_vertices_fixed = []
