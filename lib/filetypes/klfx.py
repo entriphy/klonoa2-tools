@@ -486,14 +486,14 @@ class KLFX(ft.Type):
 
                 # Initial position
                 root_keyframes_array = np.array([(float(klfa.keyframe_count) - 1.0) / 60.0], dtype=np.float32)
-                root_translations_array = np.array([[klfa.initial_pos.x, -klfa.initial_pos.y, -klfa.initial_pos.z]])
+                root_translations_array = np.array([[klfa.initial_pos.x, -klfa.initial_pos.y, -klfa.initial_pos.z]], dtype=np.float32)
                 root_keyframes_array_bytes = root_keyframes_array.tobytes()
                 root_translations_array_bytes = root_translations_array.tobytes()
                 gltf.accessors.append(
                     pygltflib.Accessor(
                         name="anim_%s_root_trans_keyframes" % (anim_name),
                         bufferView=len(gltf.bufferViews) + 1,
-                        byteOffset=len(root_keyframes_array_bytes),
+                        byteOffset=len(translations_keyframes_bytes),
                         count=len(root_keyframes_array),
                         type=pygltflib.SCALAR,
                         componentType=pygltflib.FLOAT,
@@ -505,7 +505,7 @@ class KLFX(ft.Type):
                     pygltflib.Accessor(
                         name="anim_%s_root_trans" % (anim_name),
                         bufferView=len(gltf.bufferViews),
-                        byteOffset=len(root_translations_array_bytes),
+                        byteOffset=len(translations_bytes),
                         count=len(root_translations_array),
                         type=pygltflib.VEC3,
                         componentType=pygltflib.FLOAT,
