@@ -2,13 +2,7 @@ from ..structs.klfx_struct import Klfx
 from .read_bytes import u16le
 import numpy as np
 
-def __check_winding_correct(part: Klfx.Part, vertex_indices, normal_indices): # TODO: Klonoa's eyelids' faces are messed up because of this function
-    if part.subpart_count > 0:
-        vertices = [(vertex.x, -vertex.y, -vertex.z) for subpart in part.subparts for vertex in subpart.vertices]
-        normals = [(normal.x, -normal.y, -normal.z) for subpart in part.subparts for normal in subpart.normals]
-    else:
-        vertices = [(vertex.x, -vertex.y, -vertex.z) for vertex in part.vertices]
-        normals = [(normal.x, -normal.y, -normal.z) for normal in part.normals]
+def __check_winding_correct(vertex_indices, normal_indices, vertices, normals): # TODO: Klonoa's eyelids' faces are messed up because of this function
     A = vertices[vertex_indices[0]]
     B = vertices[vertex_indices[1]]
     C = vertices[vertex_indices[2]]
@@ -22,7 +16,7 @@ def __check_winding_correct(part: Klfx.Part, vertex_indices, normal_indices): # 
     dot = np.dot(normal, cross)
     return (dot >= 0)
 
-def parse_faces(buf, part: Klfx.Part):
+def parse_faces(buf, part: Klfx.Part, vertices, normals):
         faces = []
         indices, tstrips = [], []
         current_part = 0
@@ -48,7 +42,7 @@ def parse_faces(buf, part: Klfx.Part):
             for x in range(len(face_indices) - 2):
                 vertex_indices = [face_indices[x][2], face_indices[x + 1][2], face_indices[x + 2][2]]
                 normal_indices = [face_indices[x][0], face_indices[x + 1][0], face_indices[x + 2][0]]
-                winding = __check_winding_correct(part, vertex_indices, normal_indices)
+                winding = __check_winding_correct(vertex_indices, normal_indices, vertices, normals)
                 faces.append((
                     (face_indices[x][2], face_indices[x][1], face_indices[x][0]),
                     (face_indices[x + 1][2], face_indices[x + 1][1], face_indices[x + 1][0]),

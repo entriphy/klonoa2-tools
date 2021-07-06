@@ -35,25 +35,24 @@ class KLFX(ft.Type):
         obj.write("usemtl mtl0\n\n")
         vertex_acc, normal_acc, uv_acc = 1, 1, 1
         for i, part in enumerate(klfx.parts):
-            # if part.subpart_count == 0: continue # TODO: Find out what it means when this equals zero instead of skipping it
             if part.subpart_count > 0:
                 vertices, normals = [], []
                 for subpart in part.subparts:
-                    vertices += subpart.vertices
-                    normals += subpart.normals
+                    vertices += [(vertex.x * scale, -vertex.y * scale, -vertex.z * scale) for vertex in subpart.vertices]
+                    normals += [[normal.x / 0xFFFF, -normal.y / 0xFFFF, -normal.z / 0xFFFF] for normal in subpart.normals]
             else:
-                vertices = part.vertices
-                normals = part.normals
+                vertices = [(vertex.x * scale, -vertex.y * scale, -vertex.z * scale) for vertex in part.vertices]
+                normals = [[normal.x / 0xFFFF, -normal.y / 0xFFFF, -normal.z / 0xFFFF] for normal in part.normals]
             uvs = part.uvs
-            faces = parse_faces(buf, part)
+            faces = parse_faces(buf, part, vertices, normals)
 
             obj.write("# -- Part %i ---\ng part%i\n\n" % (i, i))
             obj.write("# Vertex count: %i\n" % part.vertex_count)
             # It takes ten times longer if everything is divided in the Kaitai struct.
             # lol...?
-            for vertex in vertices: obj.write("v  %.7f %.7f %.7f\n" % (vertex.x * scale, -vertex.y * scale, -vertex.z * scale))
+            for vertex in vertices: obj.write("v  %.7f %.7f %.7f\n" % (vertex[0], vertex[1], vertex[2]))
             obj.write("\n# Normal count: %i\n" % part.normal_count)
-            for normal in normals: obj.write("vn %.7f %.7f %.7f\n" % (normal.x * scale, -normal.y * scale, -normal.z * scale))
+            for normal in normals: obj.write("vn %.7f %.7f %.7f\n" % (normal[0], normal[1], normal[2]))
             obj.write("\n# UV count: %i\n" % part.uv_count)
             for uv in uvs: obj.write("vt %.15f %.15f\n" % (uv.u / 16384, 1.0 - uv.v / 16384))
             obj.write("\n# Face count: %i\n" % len(faces))
@@ -114,7 +113,7 @@ class KLFX(ft.Type):
                 weights += [[weight.a / 0xFF, weight.b / 0XFF, weight.c / 0XFF, weight.d / 0XFF] for weight in subpart.weights]
                 joints += [[subpart.joints.a + 1, subpart.joints.b + 1 if subpart.joints.b != 0xFFFF else 0, subpart.joints.c + 1 if subpart.joints.c != 0xFFFF else 0, subpart.joints.d + 1 if subpart.joints.d != 0xFFFF else 0] for i in range(len(subpart.vertices))]
             uvs = [[uv.u / 16384, uv.v / 16384] for uv in part.uvs]
-            indices = parse_faces(buf, part)
+            indices = parse_faces(buf, part, vertices, normals)
             faces = [[face[0][0], face[1][0], face[2][0]] for face in indices]
 
             # glTF does not support multiple normals/UVs on one vertex
