@@ -88,11 +88,13 @@ types:
   joint_translation:
     seq:
       - id: keyframe_count
-        type: u4
+        type: u2
       - id: keyframes
         type: u2
         repeat: expr
         repeat-expr: keyframe_count
+      - id: keyframe_total
+        type: u2
       - id: coordinates
         type: coordinate
         repeat: expr
@@ -100,11 +102,13 @@ types:
   joint_rotation:
     seq:
       - id: keyframe_count
-        type: u4
+        type: u2
       - id: keyframes
         type: u2
         repeat: expr
         repeat-expr: keyframe_count
+      - id: keyframe_total
+        type: u2
       - id: rotations
         type: rotation
         repeat: expr

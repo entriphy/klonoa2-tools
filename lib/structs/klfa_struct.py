@@ -43,11 +43,12 @@ class Klfa(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.keyframe_count = self._io.read_u4le()
+            self.keyframe_count = self._io.read_u2le()
             self.keyframes = [None] * (self.keyframe_count)
             for i in range(self.keyframe_count):
                 self.keyframes[i] = self._io.read_u2le()
 
+            self.keyframe_total = self._io.read_u2le()
             self.coordinates = [None] * (self.keyframe_count)
             for i in range(self.keyframe_count):
                 self.coordinates[i] = Klfa.Coordinate(self._io, self, self._root)
@@ -62,11 +63,12 @@ class Klfa(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.keyframe_count = self._io.read_u4le()
+            self.keyframe_count = self._io.read_u2le()
             self.keyframes = [None] * (self.keyframe_count)
             for i in range(self.keyframe_count):
                 self.keyframes[i] = self._io.read_u2le()
 
+            self.keyframe_total = self._io.read_u2le()
             self.rotations = [None] * (self.keyframe_count)
             for i in range(self.keyframe_count):
                 self.rotations[i] = Klfa.Rotation(self._io, self, self._root)
