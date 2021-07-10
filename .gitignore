@@ -15,3 +15,8 @@ venv.bak/
 # Game files
 game_files/**
 !game_files/README.md
+*.gltf
+*.png
+*.obj
+*.mtl
+*.kl*
