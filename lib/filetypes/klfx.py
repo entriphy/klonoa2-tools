@@ -108,23 +108,25 @@ class KLFX(ft.Type):
         )
 
         for i, part in enumerate(klfx.parts):
-            vertices, normals, joints, weights,  = [], [], [], []
+            vertices, normals, joints, weights = [], [], [], []
             if part.subpart_count > 0:
                 for subpart in part.subparts:
                     vertices += [[vertex.x * klfx.header.scale, -vertex.y * klfx.header.scale, -vertex.z * klfx.header.scale] for vertex in subpart.vertices]
                     normals += [[normal.x / 0x1000, -normal.y / 0x1000, -normal.z / 0x1000] for normal in subpart.normals]
-                    if joints != "":
+                    if klfb != "":
                         # Disable cheek joints code
-                        # if klonoa_fix and "Low" not in path and i == 5:
-                        #     joints += [[19, 0, 0, 0] for i in range(len(subpart.vertices))]
-                        #     weights += [[1.0, 0.0, 0.0, 0.0] for weight in subpart.weights]
-                        # else:
-                        joints += [[subpart.joints.a + 1, subpart.joints.b + 1 if subpart.joints.b != 0xFFFF else 0, subpart.joints.c + 1 if subpart.joints.c != 0xFFFF else 0, subpart.joints.d + 1 if subpart.joints.d != 0xFFFF else 0] for i in range(len(subpart.vertices))]
-                        weights += [[weight.a / 0xFF, weight.b / 0xFF, weight.c / 0xFF, weight.d / 0xFF] for weight in subpart.weights]
+                        if klonoa_fix and "Low" not in path and i == 5:
+                            joints += [[19, 0, 0, 0] for i in range(len(subpart.vertices))]
+                            weights += [[1.0, 0.0, 0.0, 0.0] for weight in subpart.weights]
+                        else:
+                            joints += [[subpart.joints.a + 1, subpart.joints.b + 1 if subpart.joints.b != 0xFFFF else 0, subpart.joints.c + 1 if subpart.joints.c != 0xFFFF else 0, subpart.joints.d + 1 if subpart.joints.d != 0xFFFF else 0] for i in range(len(subpart.vertices))]
+                            for weight in subpart.weights:
+                                weights_sum = weight.a + weight.b + weight.c + weight.d
+                                weights.append([weight.a / weights_sum, weight.b / weights_sum, weight.c / weights_sum, weight.d / weights_sum])
             else:
                 vertices += [[vertex.x * klfx.header.scale, -vertex.y * klfx.header.scale, -vertex.z * klfx.header.scale] for vertex in part.vertices]
                 normals += [[normal.x / 0x1000, -normal.y / 0x1000, -normal.z / 0x1000] for normal in part.normals]
-                if joints != "":
+                if klfb != "":
                     joints += [[0, 0, 0, 0] for _ in range(len(part.vertices))]
                     weights += [[0.0, 0.0, 0.0, 0.0] for _ in range(len(part.vertices))]
 
@@ -158,7 +160,7 @@ class KLFX(ft.Type):
                             # Fix glTF errors/warnings
                             joint = joints[face[x][0]]
                             weight = weights[face[x][0]]
-                            if sum(weight) != 1: 
+                            if sum(weight) != 1:
                                 weight[weight.index(max(weight))] += 1 - sum(weight)
                             for z in range(len(weight)):
                                 if weight[z] == 0.0 and joint[z] != 0: joint[z] = 0
@@ -613,8 +615,8 @@ class KLFX(ft.Type):
                                             try:
                                                 keyframe_data = morph_keyframe.keyframe_data[x]
                                                 morph_weights = [0.0] * len(gltf.meshes[morph_map[keyframe_data.morph0][0]].primitives[0].targets)
-                                                morph_weights[morph_map[keyframe_data.morph0][1]] = (255 - keyframe_data.weight) / 255
                                                 morph_weights[morph_map[keyframe_data.morph1][1]] = keyframe_data.weight / 255
+                                                morph_weights[morph_map[keyframe_data.morph0][1]] = (255 - keyframe_data.weight) / 255
                                                 morph_weights_list[x].append(morph_weights)
                                                 morph_keyframes_list[x].append(keyframe / fps)
                                             except:
