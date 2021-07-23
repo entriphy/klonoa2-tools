@@ -26,3 +26,20 @@ This repository uses [Kaitai Struct](https://kaitai.io) to parse binary formats.
         * QuickBMS can do this
     - [x] Sound Effects (Soundbanks)
 
+## File types
+File type names are arbitrary unless it is a standard PS2 format.
+- `klf[abxyz]`: Model data
+    - `klfa`: Animation data (keyframes, translations, rotations, name [8 bytes])
+    - `klfb`: Bone/joint data (local positions, global/world positions, parent joints)
+    - `klfx`: Mesh data (vertices, normals, UVs, weights, joint influences, indices, mesh parts)
+    - `klfy`: Texture data (pixels, palettes)
+    - `klfz`: Morph data (target, vertices, normals)
+- `klname`: Model name (3 bytes)
+- `hd`: PS2 soundbank header
+- `bd`: PS2 soundbank data
+- `vtipu`: Similar to PS2 .ipu (movie) file, used for stuff like water animations
+- `gim`: Texture data
+- `ppt`: Cutscene voice stored as Playstation 4-bit ADPCM (mono, 22050 Hz, 16bps)
+- `kl0`: 16 bytes of `0x00`
+- `klnull`: Starts with `null` string, 16 bytes long
+- `klpad`: 4 bytes of `0xFF`, 12 bytes of `0x00`
