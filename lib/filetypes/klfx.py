@@ -84,6 +84,7 @@ class KLFX(ft.Type):
     
     def to_gltf(path: str, textures: List[str] = [], klfb: str = "", animations: List[str] = [], morphs: List[str] = [], embed_textures: bool = True, klonoa_fix: bool = False, output_file: str = ""):
         if output_file == "": output_file = path.replace(".klfx", ".gltf")
+        if klfb != "": klfb = Klfb(KaitaiStream(open(klfb, "rb")))
 
         buf = open(path, "rb").read()
         klfx = Klfx.from_bytes(buf)
@@ -160,7 +161,10 @@ class KLFX(ft.Type):
                             # Fix glTF errors/warnings
                             joint = joints[face[x][0]]
                             weight = weights[face[x][0]]
-                            if sum(weight) != 1:
+                            for j in range(len(joint)):
+                                if klfb != "" and joint[j] - 1 > klfb.count: 
+                                    joint[j] = 0
+                            if sum(weight) != 1.0:
                                 weight[weight.index(max(weight))] += 1 - sum(weight)
                             for z in range(len(weight)):
                                 if weight[z] == 0.0 and joint[z] != 0: joint[z] = 0
@@ -396,7 +400,6 @@ class KLFX(ft.Type):
         if len(buffer_bytes) % 4 != 0: buffer_bytes += b"\0" * (4 - (len(buffer_bytes) % 4))
 
         if klfb != "":
-            klfb = Klfb(KaitaiStream(open(klfb, "rb")))
             inverse_matrix = []
             inverse_matrix.append([1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
             for joint in klfb.global_joints:
