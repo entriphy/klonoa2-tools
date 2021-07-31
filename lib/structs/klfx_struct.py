@@ -23,6 +23,9 @@ class Klfx(KaitaiStruct):
 
 
     class Weight(KaitaiStruct):
+        """Since these vertex weights do not always add up to 255 (0xFF), it is 
+        recommended to divide the weights by the sum of all the weights.
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
@@ -37,6 +40,12 @@ class Klfx(KaitaiStruct):
 
 
     class Uv(KaitaiStruct):
+        """The origin point for UVs is at the top left of the image.
+        
+        Currently, it is recommended to make a 1024x1024 image for the texture 
+        (even if the texture is not actually that big, but it's just to ensure
+        everything fits in) and divide the UVs by 16384.
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
@@ -49,6 +58,8 @@ class Klfx(KaitaiStruct):
 
 
     class Coordinate(KaitaiStruct):
+        """The coordinates are Y-UP, but remember: Y and Z are inverted!
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
@@ -78,6 +89,8 @@ class Klfx(KaitaiStruct):
                 raise kaitaistruct.ValidationNotEqualError(b"\x80\x00\x40\x00", self.magic2, self._io, u"/types/header/seq/2")
             self.scale = self._io.read_f4le()
             self.reserved = self._io.read_bytes(4)
+            if not self.reserved == b"\x00\x00\x00\x00":
+                raise kaitaistruct.ValidationNotEqualError(b"\x00\x00\x00\x00", self.reserved, self._io, u"/types/header/seq/4")
 
 
     class Part(KaitaiStruct):
@@ -88,7 +101,7 @@ class Klfx(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.part_thing = self._io.read_bytes(2)
+            self.enable = self._io.read_u2le()
             self.some_number = self._io.read_u2le()
             self.triangle_strip_count = self._io.read_u2le()
             self.indices_part_count = self._io.read_u2le()
@@ -102,11 +115,23 @@ class Klfx(KaitaiStruct):
             self.normals_offset = self._io.read_u4le()
             self.subparts_offset = self._io.read_u4le()
             self.reserved = self._io.read_u4le()
-            self.uv_thing = self._io.read_bytes(6)
-            self.part_end = self._io.read_bytes(2)
+            self.texture_thing = self._io.read_bytes(8)
 
         @property
         def subparts(self):
+            """All parts that have a joint influence have at least 1 subpart.
+            Parts that need to have more than 4 joint influences will have more
+            than 1 subpart.
+            Some parts may not even have subparts/joint influences, hence why 
+            there are instances for vertices and normals in the part type.
+            
+            The start of a subpart's vertices/normals must be 16-byte aligned.
+            This is very important for parts with more than 1 subpart, since subparts
+            do not define a vertices/normals offset for that specific subpart.
+            See the "prev_(vertices/normals)" and "res_(vertices/normals)" instances
+            in the subpart type to see how this is handled.
+            (Kaitai is very finnicky when doing that type of stuff, but it works :P)
+            """
             if hasattr(self, '_m_subparts'):
                 return self._m_subparts if hasattr(self, '_m_subparts') else None
 
@@ -211,6 +236,9 @@ class Klfx(KaitaiStruct):
 
         @property
         def vertices(self):
+            """Vertices must be multiplied by the scale value in the header of the
+            model.
+            """
             if hasattr(self, '_m_vertices'):
                 return self._m_vertices if hasattr(self, '_m_vertices') else None
 
@@ -241,6 +269,8 @@ class Klfx(KaitaiStruct):
 
         @property
         def normals(self):
+            """Normals must be divided by 0x1000 (4096).
+            """
             if hasattr(self, '_m_normals'):
                 return self._m_normals if hasattr(self, '_m_normals') else None
 
@@ -255,6 +285,8 @@ class Klfx(KaitaiStruct):
 
 
     class Joints(KaitaiStruct):
+        """Joint influences that have a value of 0xFFFF (65535) are essentially "N/A".
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent

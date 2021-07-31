@@ -6,6 +6,16 @@ meta:
 params:
   - id: input_klfx
     type: klfx
+    doc: |
+      Like subparts in klfx, morph vertices/normals are split into
+      subparts and are 16-byte aligned. The only problem is that subparts
+      are not defined in this file, which is why the klfx file that corresponds
+      to this file is required.
+      
+      Other than that, this is pretty much the same as how vertices and normals
+      are defined in a klfx file. When the morph is used, the klfx part's (defined in 
+      part_number) vertices and normals are set to the ones defined in this
+      file.
 seq:
   - id: header
     type: header

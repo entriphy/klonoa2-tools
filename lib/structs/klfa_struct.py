@@ -9,6 +9,24 @@ if parse_version(kaitaistruct.__version__) < parse_version('0.9'):
     raise Exception("Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s" % (kaitaistruct.__version__))
 
 class Klfa(KaitaiStruct):
+    """- animation
+      - translations
+        - joint0
+          - keyframes
+          - translations for each keyframe
+        - joint1
+          - keyframes
+          - translations for each keyframe
+        - ...
+      - rotations
+        - joint0
+          - keyframes
+          - rotations for each keyframe
+        - joint1
+          - keyframes
+          - rotations for each keyframe
+        - ...
+    """
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -76,6 +94,18 @@ class Klfa(KaitaiStruct):
 
 
     class MorphKeyframeData(KaitaiStruct):
+        """Morph weights are defined for each frame in the animation for
+        animations that do have morph animations.
+        
+        morph0 and morph1 decides the index of the morph (klfz) to use and
+        are essentially "inverses" of each other.
+        If morph0 equals 0, morph1 equals 2, and weight equals 0x10,
+        klfz #0 will have a weight of 0xEF and klfz #2 will have a weight
+        of 0x10.
+        
+        Multiple morphs can be used per frame in case an animation needs
+        to animate a character's face and hand morphs at the same time.
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
@@ -89,6 +119,10 @@ class Klfa(KaitaiStruct):
 
 
     class Rotation(KaitaiStruct):
+        """To get an euler angle, divide an axis by 0xFFFF (65535) and multiply it
+        by 365.
+        Y and Z are also inverted for this.
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
@@ -129,6 +163,9 @@ class Klfa(KaitaiStruct):
 
 
     class Coordinate(KaitaiStruct):
+        """Multiply these by the scale value in the header.
+        The coordinates are Y-UP, but remember: Y and Z are inverted!
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent

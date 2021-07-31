@@ -12,6 +12,9 @@ seq:
     type: u2
     repeat: expr
     repeat-expr: count
+    doc: |
+      Defines parent joints for each joint. 0xFFFF means a joint
+      does not have a parent.
 instances:
   local_joints:
     pos: local_joints_offset
@@ -25,6 +28,8 @@ instances:
     repeat-expr: count
 types:
   coordinate:
+    doc: |
+      Y and Z axes are inverted.
     seq:
       - id: x
         type: f4

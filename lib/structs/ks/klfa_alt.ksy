@@ -1,6 +1,38 @@
 meta:
   id: klfa_alt
   endian: le
+doc: |
+  This format is slightly different than the normal klfa format.
+  Rather than using keyframe values, translations and rotations are
+  defined for each frame.
+  
+  Translations are only defined for certain joints. See the "targets" property
+  for more info.
+  
+  - animation
+    - rotations
+      - frame0
+        - joint0
+        - joint1
+        - joint2
+        - ...
+      - frame1
+        - joint0
+        - joint1
+        - joint2
+        - ...
+      - ...
+    - translations
+      - frame0
+        - joint0
+        - joint1
+        - joint2
+        - ...
+      - frame1
+        - joint0
+        - ...
+      - ...
+    
 seq:
   - id: joint_count
     type: u2
@@ -19,6 +51,11 @@ seq:
     size: 0x10
   - id: joint_targets
     type: u8
+    doc: |
+      This is a bit mask that defines which joints are affected by translations.
+      Ex. if bit 0 and 3 are 1, then the animation will have translation keyframes
+      for joint0 and joint3 (and in this scenario, translation_count should
+      equal 2). All the other joints simply do not have translations.
   - id: more_stuff
     size: 0x08
   - id: initial_pos
@@ -35,6 +72,9 @@ seq:
     type: u2
   - id: transition_out
     type: u2
+    doc: |
+      Not sure if transition_out gets read by the game, but I'm just assuming
+      what it is based on the fact that it's after transition_in.
   - id: this_stuff_doesnt_get_read_by_the_game_lol
     size: 0x0C
 instances:
@@ -70,6 +110,8 @@ types:
       - id: z
         type: f4
   coordinate:
+    doc: |
+      The coordinates are Y-UP, but remember: Y and Z are inverted!
     seq:
       - id: x
         type: s2
@@ -78,6 +120,10 @@ types:
       - id: z
         type: s2
   rotation:
+    doc: |
+      To get an euler angle, divide an axis by 0xFFFF (65535) and multiply it
+      by 365.
+      Y and Z are also inverted for this.
     seq:
       - id: x
         type: u2

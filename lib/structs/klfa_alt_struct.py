@@ -9,6 +9,37 @@ if parse_version(kaitaistruct.__version__) < parse_version('0.9'):
     raise Exception("Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s" % (kaitaistruct.__version__))
 
 class KlfaAlt(KaitaiStruct):
+    """This format is slightly different than the normal klfa format.
+    Rather than using keyframe values, translations and rotations are
+    defined for each frame.
+    
+    Translations are only defined for certain joints. See the "targets" property
+    for more info.
+    
+    - animation
+      - rotations
+        - frame0
+          - joint0
+          - joint1
+          - joint2
+          - ...
+        - frame1
+          - joint0
+          - joint1
+          - joint2
+          - ...
+        - ...
+      - translations
+        - frame0
+          - joint0
+          - joint1
+          - joint2
+          - ...
+        - frame1
+          - joint0
+          - ...
+        - ...
+    """
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -88,6 +119,10 @@ class KlfaAlt(KaitaiStruct):
 
 
     class Rotation(KaitaiStruct):
+        """To get an euler angle, divide an axis by 0xFFFF (65535) and multiply it
+        by 365.
+        Y and Z are also inverted for this.
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
@@ -114,6 +149,8 @@ class KlfaAlt(KaitaiStruct):
 
 
     class Coordinate(KaitaiStruct):
+        """The coordinates are Y-UP, but remember: Y and Z are inverted!
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent

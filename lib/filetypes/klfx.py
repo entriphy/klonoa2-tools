@@ -122,6 +122,7 @@ class KLFX(ft.Type):
                         else:
                             joints += [[subpart.joints.a + 1, subpart.joints.b + 1 if subpart.joints.b != 0xFFFF else 0, subpart.joints.c + 1 if subpart.joints.c != 0xFFFF else 0, subpart.joints.d + 1 if subpart.joints.d != 0xFFFF else 0] for i in range(len(subpart.vertices))]
                             for weight in subpart.weights:
+                                # The vertex weights sometimes don't add up to 0xFF, so they are divided by the sum.
                                 weights_sum = weight.a + weight.b + weight.c + weight.d
                                 weights.append([weight.a / weights_sum, weight.b / weights_sum, weight.c / weights_sum, weight.d / weights_sum])
             else:
@@ -173,6 +174,7 @@ class KLFX(ft.Type):
                         vertices_map.append(face[x][0])
                 indices_fixed.append([indices_list.index(face[0]), indices_list.index(face[1]), indices_list.index(face[2])])
 
+            # We don't need the old values, so just replace them
             vertices = vertices_fixed
             normals = normals_fixed
             weights = weights_fixed
@@ -180,6 +182,7 @@ class KLFX(ft.Type):
             uvs = uvs_fixed
             faces = indices_fixed
             
+            # Create byte arrays for mesh part
             vertices_array = np.array(vertices, dtype=np.float32)
             normals_array = np.array(normals, dtype=np.float32)
             uvs_array = np.array(uvs, dtype=np.float32)
@@ -210,6 +213,7 @@ class KLFX(ft.Type):
                 ]
             )
 
+            # Add accessor for the part to the glTF file
             gltf.accessors.append(pygltflib.Accessor(
                 name=f"part{i}_vertices",
                 bufferView=0,
@@ -240,6 +244,7 @@ class KLFX(ft.Type):
                 max=uvs_array.max(axis=0).tolist(),
                 min=uvs_array.min(axis=0).tolist(),
             ))
+            # Only add rig-related stuff if a rig is defined
             if klfb != "":
                 gltf.accessors.append(pygltflib.Accessor(
                     name=f"part{i}_joints",
@@ -279,6 +284,7 @@ class KLFX(ft.Type):
             uvs_bytes += uvs_array.tobytes()
             triangles_bytes += triangles_array.flatten().tobytes()
 
+            # Add morph targets to gltf
             if len(morphs) > 0:
                 for x, morph in enumerate(morphs):
                     if morph.parts[0].part_number != i: continue
@@ -291,6 +297,7 @@ class KLFX(ft.Type):
                     morph_vertices_fixed = []
                     morph_normals_fixed = []
                     for idx in vertices_map:
+                        # glTF uses displacement values for morphs, meaning we have to take the difference of the morph data and the original data
                         morph_vertices_fixed.append([morph_vertices[idx][0] - vertices[vertices_map.index(idx)][0], morph_vertices[idx][1] - vertices[vertices_map.index(idx)][1], morph_vertices[idx][2] - vertices[vertices_map.index(idx)][2]])
                         morph_normals_fixed.append([morph_normals[idx][0] - normals[vertices_map.index(idx)][0], morph_normals[idx][1] - normals[vertices_map.index(idx)][1], morph_normals[idx][2] - normals[vertices_map.index(idx)][2]])
 
@@ -331,6 +338,8 @@ class KLFX(ft.Type):
                     vertices_bytes += morph_vertices_array.tobytes()
                     normals_bytes += morph_normals_array.tobytes()
 
+                    # Keeps track of what the target mesh of each morph is
+                    # Helpful for later when it comes to parsing animations that use morphs
                     morph_map[int(os.path.basename(morph_list[x]).split("_")[0])] = (i, len(mesh.primitives[0].targets) - 1)
 
             gltf.meshes.append(mesh)
@@ -339,6 +348,7 @@ class KLFX(ft.Type):
             if klfb != "": node.skin = 0
             gltf.nodes.append(node)
             
+        # Add buffer views
         gltf.bufferViews.append(pygltflib.BufferView(
             name="vertices",
             buffer=0,
@@ -400,6 +410,7 @@ class KLFX(ft.Type):
         if len(buffer_bytes) % 4 != 0: buffer_bytes += b"\0" * (4 - (len(buffer_bytes) % 4))
 
         if klfb != "":
+            # Create inverse matrix for each joint
             inverse_matrix = []
             inverse_matrix.append([1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
             for joint in klfb.global_joints:
@@ -424,6 +435,7 @@ class KLFX(ft.Type):
             ))
             buffer_bytes += inverse_matrix_bytes
 
+            # Add rig/skin to glTF
             skin = pygltflib.Skin(
                 joints=[len(gltf.nodes)],
                 inverseBindMatrices=len(gltf.accessors) - 1,
@@ -442,6 +454,7 @@ class KLFX(ft.Type):
                 skin.joints.append(joints_start + x)
             gltf.skins.append(skin)
 
+            # Parse animations
             if len(animations) > 0:
                 translations_bytes = bytes()
                 translations_keyframes_bytes = bytes()
@@ -450,7 +463,7 @@ class KLFX(ft.Type):
                 morph_bytes = bytes()
                 morph_keyframes_bytes = bytes()
 
-                anim_list = []
+                anim_list = [] # Keeps track of what animations have already been added based on animation names
                 for animation in animations:
                     try:
                         try: klfa = Klfa.from_file(animation)
@@ -884,7 +897,9 @@ class KLFX(ft.Type):
                         )
                         buffer_bytes += morph_bytes
 
+        # Add textures to glTF
         if len(textures) > 0:
+            # Use nearest texture filtering since that seems to work the best
             gltf.samplers.append(pygltflib.Sampler(
                 magFilter=pygltflib.NEAREST,
                 minFilter=pygltflib.NEAREST,

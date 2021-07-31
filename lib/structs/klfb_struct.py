@@ -25,6 +25,8 @@ class Klfb(KaitaiStruct):
 
 
     class Coordinate(KaitaiStruct):
+        """Y and Z axes are inverted.
+        """
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
