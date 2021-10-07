@@ -5,9 +5,9 @@
   * File: Normal file
   * Directory: Contains pointers that lead to other files
   * Archive: "Root directories" that are defined in `HEADPACK.BIN`
-* Archives 0-2 are empty.
-* Every odd archive is a "preload archive", and every even archive is a "data archive".
-  * Ex. For Sea of Tears, the game loads archive 3 (preload archive), transfers that data to VRAM/IOP RAM/elsewhere, and then loads archive 4 (data archive), thus removing archive 3 from main RAM.
+* Archives 0 and 1 are empty.
+* Every even archive is a "preload archive", and every odd archive is a "data archive".
+  * Ex. For Sea of Tears, the game loads archive 2 (preload archive), transfers that data to VRAM/IOP RAM/elsewhere, and then loads archive 3 (data archive), thus removing archive 2 from main RAM.
 * GIM files are texture files with the magic header `GIM`
 * `n`: Variable number of files/directories
 * `x-y`: Range of files/directories
