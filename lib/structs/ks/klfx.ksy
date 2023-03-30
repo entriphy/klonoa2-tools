@@ -31,13 +31,10 @@ types:
           This value seems to only be used for Lolo's low-poly model.
       - id: some_number
         type: u2
-      - id: triangle_strip_count
+      - id: tristrip_count
         type: u2
-      - id: indices_part_count
+      - id: tristrip_group_count
         type: u2
-        doc: |
-          Indices are not handled by this parser due to their complexity.
-          See the parser in lib/util/klfx_indices.py.
       - id: uv_count
         type: u2
         doc: |
@@ -99,6 +96,11 @@ types:
         type: coordinate
         repeat: expr
         repeat-expr: subpart_count == 0 ? normal_count : 0
+      tristrip_groups:
+        pos: indices_offset
+        type: tristrip_group
+        repeat: expr
+        repeat-expr: tristrip_group_count
   subpart:
     params:
       - id: i
@@ -194,6 +196,30 @@ types:
         type: u1
       - id: d
         type: u1
+  tristrip_group:
+    seq:
+      - id: tristrips
+        type: tristrip
+        repeat: until
+        repeat-until: _.indices[_.start.flag - 2].flag == -1
+  tristrip:
+    seq:
+      - id: start
+        type: index
+      - id: indices
+        type: index
+        repeat: expr
+        repeat-expr: start.flag - 1
+  index:
+    seq:
+      - id: vertex
+        type: u2
+      - id: uv
+        type: u2
+      - id: normal
+        type: u2
+      - id: flag
+        type: s2
   gsreg_tex0:
     seq:
       - id: tbp0

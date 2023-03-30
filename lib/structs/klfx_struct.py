@@ -1,14 +1,29 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
-from pkg_resources import parse_version
 import kaitaistruct
 from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
+from enum import Enum
 
 
-if parse_version(kaitaistruct.__version__) < parse_version('0.9'):
+if getattr(kaitaistruct, 'API_VERSION', (0, 9)) < (0, 9):
     raise Exception("Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s" % (kaitaistruct.__version__))
 
 class Klfx(KaitaiStruct):
+
+    class GsPsm(Enum):
+        psmct32 = 0
+        psmct24 = 1
+        psmct16 = 2
+        psmct16s = 10
+        psmt8 = 19
+        psmt4 = 20
+        psmt8h = 27
+        psmt4hl = 36
+        psmt4hh = 44
+        psmz32 = 48
+        psmz24 = 49
+        psmz16 = 50
+        psmz16s = 58
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -17,9 +32,9 @@ class Klfx(KaitaiStruct):
 
     def _read(self):
         self.header = Klfx.Header(self._io, self, self._root)
-        self.parts = [None] * (self.header.part_count)
+        self.parts = []
         for i in range(self.header.part_count):
-            self.parts[i] = Klfx.Part(self._io, self, self._root)
+            self.parts.append(Klfx.Part(self._io, self, self._root))
 
 
     class Weight(KaitaiStruct):
@@ -55,6 +70,61 @@ class Klfx(KaitaiStruct):
         def _read(self):
             self.u = self._io.read_u4le()
             self.v = self._io.read_u4le()
+
+
+    class Tristrip(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.start = Klfx.Index(self._io, self, self._root)
+            self.indices = []
+            for i in range((self.start.flag - 1)):
+                self.indices.append(Klfx.Index(self._io, self, self._root))
+
+
+
+    class GsregTex0(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.tbp0 = self._io.read_bits_int_le(14)
+            self.tbw = self._io.read_bits_int_le(6)
+            self.psm = KaitaiStream.resolve_enum(Klfx.GsPsm, self._io.read_bits_int_le(6))
+            self.tw = self._io.read_bits_int_le(4)
+            self.th = self._io.read_bits_int_le(4)
+            self.tcc = self._io.read_bits_int_le(1) != 0
+            self.tfx = self._io.read_bits_int_le(2)
+            self.cbp = self._io.read_bits_int_le(14)
+            self.cpsm = KaitaiStream.resolve_enum(Klfx.GsPsm, self._io.read_bits_int_le(4))
+            self.csm = self._io.read_bits_int_le(1) != 0
+            self.csa = self._io.read_bits_int_le(5)
+            self.cld = self._io.read_bits_int_le(3)
+
+
+    class TristripGroup(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.tristrips = []
+            i = 0
+            while True:
+                _ = Klfx.Tristrip(self._io, self, self._root)
+                self.tristrips.append(_)
+                if _.indices[(_.start.flag - 2)].flag == -1:
+                    break
+                i += 1
 
 
     class Coordinate(KaitaiStruct):
@@ -103,8 +173,8 @@ class Klfx(KaitaiStruct):
         def _read(self):
             self.enable = self._io.read_u2le()
             self.some_number = self._io.read_u2le()
-            self.triangle_strip_count = self._io.read_u2le()
-            self.indices_part_count = self._io.read_u2le()
+            self.tristrip_count = self._io.read_u2le()
+            self.tristrip_group_count = self._io.read_u2le()
             self.uv_count = self._io.read_u2le()
             self.subpart_count = self._io.read_u2le()
             self.vertex_count = self._io.read_u2le()
@@ -115,7 +185,49 @@ class Klfx(KaitaiStruct):
             self.normals_offset = self._io.read_u4le()
             self.subparts_offset = self._io.read_u4le()
             self.reserved = self._io.read_u4le()
-            self.texture_thing = self._io.read_bytes(8)
+            self.tex0 = Klfx.GsregTex0(self._io, self, self._root)
+
+        @property
+        def vertices(self):
+            if hasattr(self, '_m_vertices'):
+                return self._m_vertices
+
+            _pos = self._io.pos()
+            self._io.seek(self.vertices_offset)
+            self._m_vertices = []
+            for i in range((self.vertex_count if self.subpart_count == 0 else 0)):
+                self._m_vertices.append(Klfx.Coordinate(self._io, self, self._root))
+
+            self._io.seek(_pos)
+            return getattr(self, '_m_vertices', None)
+
+        @property
+        def uvs(self):
+            if hasattr(self, '_m_uvs'):
+                return self._m_uvs
+
+            _pos = self._io.pos()
+            self._io.seek(self.uvs_offset)
+            self._m_uvs = []
+            for i in range(self.uv_count):
+                self._m_uvs.append(Klfx.Uv(self._io, self, self._root))
+
+            self._io.seek(_pos)
+            return getattr(self, '_m_uvs', None)
+
+        @property
+        def tristrip_groups(self):
+            if hasattr(self, '_m_tristrip_groups'):
+                return self._m_tristrip_groups
+
+            _pos = self._io.pos()
+            self._io.seek(self.indices_offset)
+            self._m_tristrip_groups = []
+            for i in range(self.tristrip_group_count):
+                self._m_tristrip_groups.append(Klfx.TristripGroup(self._io, self, self._root))
+
+            self._io.seek(_pos)
+            return getattr(self, '_m_tristrip_groups', None)
 
         @property
         def subparts(self):
@@ -133,58 +245,30 @@ class Klfx(KaitaiStruct):
             (Kaitai is very finnicky when doing that type of stuff, but it works :P)
             """
             if hasattr(self, '_m_subparts'):
-                return self._m_subparts if hasattr(self, '_m_subparts') else None
+                return self._m_subparts
 
             _pos = self._io.pos()
             self._io.seek(self.subparts_offset)
-            self._m_subparts = [None] * (self.subpart_count)
+            self._m_subparts = []
             for i in range(self.subpart_count):
-                self._m_subparts[i] = Klfx.Subpart(i, self._io, self, self._root)
+                self._m_subparts.append(Klfx.Subpart(i, self._io, self, self._root))
 
             self._io.seek(_pos)
-            return self._m_subparts if hasattr(self, '_m_subparts') else None
-
-        @property
-        def uvs(self):
-            if hasattr(self, '_m_uvs'):
-                return self._m_uvs if hasattr(self, '_m_uvs') else None
-
-            _pos = self._io.pos()
-            self._io.seek(self.uvs_offset)
-            self._m_uvs = [None] * (self.uv_count)
-            for i in range(self.uv_count):
-                self._m_uvs[i] = Klfx.Uv(self._io, self, self._root)
-
-            self._io.seek(_pos)
-            return self._m_uvs if hasattr(self, '_m_uvs') else None
-
-        @property
-        def vertices(self):
-            if hasattr(self, '_m_vertices'):
-                return self._m_vertices if hasattr(self, '_m_vertices') else None
-
-            _pos = self._io.pos()
-            self._io.seek(self.vertices_offset)
-            self._m_vertices = [None] * ((self.vertex_count if self.subpart_count == 0 else 0))
-            for i in range((self.vertex_count if self.subpart_count == 0 else 0)):
-                self._m_vertices[i] = Klfx.Coordinate(self._io, self, self._root)
-
-            self._io.seek(_pos)
-            return self._m_vertices if hasattr(self, '_m_vertices') else None
+            return getattr(self, '_m_subparts', None)
 
         @property
         def normals(self):
             if hasattr(self, '_m_normals'):
-                return self._m_normals if hasattr(self, '_m_normals') else None
+                return self._m_normals
 
             _pos = self._io.pos()
             self._io.seek(self.normals_offset)
-            self._m_normals = [None] * ((self.normal_count if self.subpart_count == 0 else 0))
+            self._m_normals = []
             for i in range((self.normal_count if self.subpart_count == 0 else 0)):
-                self._m_normals[i] = Klfx.Coordinate(self._io, self, self._root)
+                self._m_normals.append(Klfx.Coordinate(self._io, self, self._root))
 
             self._io.seek(_pos)
-            return self._m_normals if hasattr(self, '_m_normals') else None
+            return getattr(self, '_m_normals', None)
 
 
     class Subpart(KaitaiStruct):
@@ -207,32 +291,32 @@ class Klfx(KaitaiStruct):
         @property
         def weights(self):
             if hasattr(self, '_m_weights'):
-                return self._m_weights if hasattr(self, '_m_weights') else None
+                return self._m_weights
 
             _pos = self._io.pos()
             self._io.seek(self.weights_offset)
-            self._m_weights = [None] * (self.vertex_count)
+            self._m_weights = []
             for i in range(self.vertex_count):
-                self._m_weights[i] = Klfx.Weight(self._io, self, self._root)
+                self._m_weights.append(Klfx.Weight(self._io, self, self._root))
 
             self._io.seek(_pos)
-            return self._m_weights if hasattr(self, '_m_weights') else None
+            return getattr(self, '_m_weights', None)
 
         @property
         def prev_normals(self):
             if hasattr(self, '_m_prev_normals'):
-                return self._m_prev_normals if hasattr(self, '_m_prev_normals') else None
+                return self._m_prev_normals
 
             self._m_prev_normals = (self._parent.normals_offset if self.i == 0 else self._parent.subparts[(self.i - 1)].res_normals)
-            return self._m_prev_normals if hasattr(self, '_m_prev_normals') else None
+            return getattr(self, '_m_prev_normals', None)
 
         @property
         def res_normals(self):
             if hasattr(self, '_m_res_normals'):
-                return self._m_res_normals if hasattr(self, '_m_res_normals') else None
+                return self._m_res_normals
 
             self._m_res_normals = ((self.prev_normals + (self._parent.subparts[self.i].normal_count * 6)) + ((16 - ((self._parent.subparts[self.i].normal_count * 6) % 16)) if ((self._parent.subparts[self.i].normal_count * 6) % 16) != 0 else 0))
-            return self._m_res_normals if hasattr(self, '_m_res_normals') else None
+            return getattr(self, '_m_res_normals', None)
 
         @property
         def vertices(self):
@@ -240,48 +324,48 @@ class Klfx(KaitaiStruct):
             model.
             """
             if hasattr(self, '_m_vertices'):
-                return self._m_vertices if hasattr(self, '_m_vertices') else None
+                return self._m_vertices
 
             _pos = self._io.pos()
             self._io.seek(self.prev_vertices)
-            self._m_vertices = [None] * (self.vertex_count)
+            self._m_vertices = []
             for i in range(self.vertex_count):
-                self._m_vertices[i] = Klfx.Coordinate(self._io, self, self._root)
+                self._m_vertices.append(Klfx.Coordinate(self._io, self, self._root))
 
             self._io.seek(_pos)
-            return self._m_vertices if hasattr(self, '_m_vertices') else None
+            return getattr(self, '_m_vertices', None)
 
         @property
         def res_vertices(self):
             if hasattr(self, '_m_res_vertices'):
-                return self._m_res_vertices if hasattr(self, '_m_res_vertices') else None
+                return self._m_res_vertices
 
             self._m_res_vertices = ((self.prev_vertices + (self._parent.subparts[self.i].vertex_count * 6)) + ((16 - ((self._parent.subparts[self.i].vertex_count * 6) % 16)) if ((self._parent.subparts[self.i].vertex_count * 6) % 16) != 0 else 0))
-            return self._m_res_vertices if hasattr(self, '_m_res_vertices') else None
+            return getattr(self, '_m_res_vertices', None)
 
         @property
         def prev_vertices(self):
             if hasattr(self, '_m_prev_vertices'):
-                return self._m_prev_vertices if hasattr(self, '_m_prev_vertices') else None
+                return self._m_prev_vertices
 
             self._m_prev_vertices = (self._parent.vertices_offset if self.i == 0 else self._parent.subparts[(self.i - 1)].res_vertices)
-            return self._m_prev_vertices if hasattr(self, '_m_prev_vertices') else None
+            return getattr(self, '_m_prev_vertices', None)
 
         @property
         def normals(self):
             """Normals must be divided by 0x1000 (4096).
             """
             if hasattr(self, '_m_normals'):
-                return self._m_normals if hasattr(self, '_m_normals') else None
+                return self._m_normals
 
             _pos = self._io.pos()
             self._io.seek(self.prev_normals)
-            self._m_normals = [None] * (self.normal_count)
+            self._m_normals = []
             for i in range(self.normal_count):
-                self._m_normals[i] = Klfx.Coordinate(self._io, self, self._root)
+                self._m_normals.append(Klfx.Coordinate(self._io, self, self._root))
 
             self._io.seek(_pos)
-            return self._m_normals if hasattr(self, '_m_normals') else None
+            return getattr(self, '_m_normals', None)
 
 
     class Joints(KaitaiStruct):
@@ -298,6 +382,20 @@ class Klfx(KaitaiStruct):
             self.b = self._io.read_u2le()
             self.c = self._io.read_u2le()
             self.d = self._io.read_u2le()
+
+
+    class Index(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.vertex = self._io.read_u2le()
+            self.uv = self._io.read_u2le()
+            self.normal = self._io.read_u2le()
+            self.flag = self._io.read_s2le()
 
 
 
