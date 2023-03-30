@@ -1,6 +1,7 @@
 meta:
   id: klfx
   endian: le
+  bit-endian: le
 seq:
   - id: header
     type: header
@@ -62,14 +63,8 @@ types:
         type: u4
       - id: reserved
         type: u4
-      - id: texture_thing
-        size: 8
-        doc: |
-          It is currently unknown how to parse this value, but it seems to be
-          some sort of texture "mask".
-          This is also the cause of why Klonoa's texture for his ears and tail
-          gets messed up with the current extractor. All other models are fine
-          without properly parsing this value though so... I don't know lol.
+      - id: tex0
+        type: gsreg_tex0
     instances:
       subparts:
         pos: subparts_offset
@@ -199,3 +194,46 @@ types:
         type: u1
       - id: d
         type: u1
+  gsreg_tex0:
+    seq:
+      - id: tbp0
+        type: b14
+      - id: tbw
+        type: b6
+      - id: psm
+        type: b6
+        enum: gs_psm
+      - id: tw
+        type: b4
+      - id: th
+        type: b4
+      - id: tcc
+        type: b1
+      - id: tfx
+        type: b2
+      - id: cbp
+        type: b14
+      - id: cpsm
+        type: b4
+        enum: gs_psm
+      - id: csm
+        type: b1
+      - id: csa
+        type: b5
+      - id: cld
+        type: b3
+enums:
+  gs_psm:
+    0x00: psmct32
+    0x01: psmct24
+    0x02: psmct16
+    0x0A: psmct16s
+    0x13: psmt8
+    0x14: psmt4
+    0x1B: psmt8h
+    0x24: psmt4hl
+    0x2C: psmt4hh
+    0x30: psmz32
+    0x31: psmz24
+    0x32: psmz16
+    0x3A: psmz16s
