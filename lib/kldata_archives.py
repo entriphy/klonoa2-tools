@@ -1,4 +1,4 @@
-from lib.util.read_bytes import s32le
+from lib.util.read_bytes import s32le, u32le
 from lib.chr import CHR_IDs
 import os
 
@@ -90,7 +90,7 @@ class PreloadArchive(Archive):
         if self.index != -1:
             global vision
             vision = self.index // 2
-        self.name = f"vision{str(vision).zfill(2)}_preload"
+            self.name = f"vision{str(vision).zfill(2)}_preload"
         self.size = self.get_file_offset(7) - self.buffer_offset + 0x10
         self.archives = [None for _ in range(self.get_file_count())]
         self.archives[0] = (Archive, "nakano")
@@ -107,7 +107,7 @@ class RootArchive(Archive):
         if self.index != -1:
             global vision
             vision = self.index // 2
-        self.name = f"vision{str(vision).zfill(2)}_root"
+            self.name = f"vision{str(vision).zfill(2)}_root"
         self.size = self.get_file_offset(7) - self.buffer_offset + 0x10
         self.archives = [None for _ in range(self.get_file_count())]
         self.archives[0] = (NakanoArchive, "nakano")
@@ -131,6 +131,7 @@ class SpritesArchive(Archive):
         self.archives[6] = (Archive, "take")
         self.filenames = [None for _ in range(self.get_file_count())]
         self.filenames[7] = "kazuya_sprites.gms"
+        self.size = self.get_file_offset(7) + u32le(self.buffer, self.get_file_offset(7) + 0x08) - self.buffer_offset
 
 class NakanoSpritesArchive(Archive):
     def setup_archive(self):

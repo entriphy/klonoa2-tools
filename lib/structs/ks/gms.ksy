@@ -8,6 +8,7 @@ seq:
     type: chain_dmatag
   - id: dmatag2
     type: chain_dmatag
+    size: 16
     if: dmatag.addr == 0x10 and dmatag.qwc == 1
   - id: vifcode_nop
     type: vifcode
